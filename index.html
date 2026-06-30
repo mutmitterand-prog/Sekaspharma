@@ -441,28 +441,33 @@
             </div>
 
             <div class="card" style="border-left: 4px solid var(--accent-blue);">
-                <h3>👥 Gestion de l'Équipe (Assistants)</h3>
-                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px;">
-                    <h5>Créer / Modifier un utilisateur</h5>
-                    <input type="hidden" id="user-id-edit">
-                    <div class="form-group" style="margin-top:8px;">
-                        <input type="text" id="user-name" placeholder="Nom de l'assistant">
-                    </div>
-                    <div class="form-row">
-                        <input type="password" id="user-code" placeholder="Code secret (4 chiffres)">
-                        <select id="user-role">
-                            <option value="assistant">Assistant</option>
-                            <option value="admin">Administrateur</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <button class="btn-accent" style="margin-top:0;" onclick="saveUserCloud()">Sauvegarder</button>
-                        <button class="btn-secondary" style="margin-top:0;" onclick="clearUserForm()">Annuler</button>
-                    </div>
-                </div>
-                <h5>Liste du Personnel</h5>
-                <div id="admin-users-list" style="margin-top:8px;"></div>
+    <h3>👥 Gestion de l'Équipe (Assistants)</h3>
+    <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px;">
+        <h5>Créer / Modifier un utilisateur</h5>
+        <input type="hidden" id="user-id-edit">
+        <div class="form-group" style="margin-top:8px;">
+            <input type="text" id="user-name" placeholder="Nom de l'assistant">
+        </div>
+        <div class="form-row">
+            <div class="password-wrapper" style="position: relative; flex: 1;">
+                <input type="password" id="user-code" placeholder="Code secret (4 chiffres)" style="width: 100%; padding-right: 35px;">
+                <span id="toggle-user-code" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; opacity: 0.6;">👁️</span>
             </div>
+            
+            <select id="user-role">
+                <option value="assistant">Assistant</option>
+                <option value="admin">Administrateur</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <button class="btn-accent" style="margin-top:0;" onclick="saveUserCloud()">Sauvegarder</button>
+            <button class="btn-secondary" style="margin-top:0;" onclick="clearUserForm()">Annuler</button>
+        </div>
+    </div>
+    <h5>Liste du Personnel</h5>
+    <div id="admin-users-list" style="margin-top:8px;"></div>
+</div>
+
 
             <div class="card" style="border-left: 4px solid var(--warning);">
                 <h3>📦 Historique des Réapprovisionnements</h3>
@@ -1442,6 +1447,34 @@
                 }
             }
         };
+        document.addEventListener("DOMContentLoaded", function() {
+    const toggleUserCode = document.getElementById("toggle-user-code");
+    const userCodeInput = document.getElementById("user-code");
+
+    if (toggleUserCode && userCodeInput) {
+        toggleUserCode.addEventListener("click", function () {
+            // On vérifie le type actuel et on l'inverse
+            const isPassword = userCodeInput.getAttribute("type") === "password";
+            userCodeInput.setAttribute("type", isPassword ? "text" : "password");
+            
+            // On change l'icône selon l'état
+            this.textContent = isPassword ? "🙈" : "👁️";
+        });
+    }
+});
+
+// IMPORTANT : Pense à reset le champ en mode 'password' quand tu réinitialises le formulaire !
+const originalClearUserForm = clearUserForm;
+clearUserForm = function() {
+    if (originalClearUserForm) originalClearUserForm();
+    const userCodeInput = document.getElementById("user-code");
+    const toggleUserCode = document.getElementById("toggle-user-code");
+    if (userCodeInput && toggleUserCode) {
+        userCodeInput.setAttribute("type", "password");
+        toggleUserCode.textContent = "👁️";
+    }
+};
+
     </script>
 </body>
 </html>
