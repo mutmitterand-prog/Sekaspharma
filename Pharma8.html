@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaSys Mobile - Cloud Synchro & Gestion</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b4f43">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+            });
+        }
+    </script>
+
+    
+    <style>
+        :root {
+            --primary-dark: #0b4f43; /* Vert Malachite Foncé */
+            --primary-light: #10b981; /* Vert Émeraude */
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-dark: #2d3748;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --accent-blue: #2563eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            padding-bottom: 80px;
+        }
+
+        header {
+            background-color: var(--primary-dark);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 4px solid var(--primary-light);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .btn-logout {
+            background: #991b1b;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+            margin-top: 0;
+        }
+
+        .role-indicator {
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .container {
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .kpi-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-light);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .kpi-title {
+            font-size: 0.8rem;
+            color: #718096;
+            text-transform: uppercase;
+        }
+
+        .kpi-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
+
+        h3 {
+            margin-bottom: 15px;
+            color: var(--primary-dark);
+            font-size: 1.1rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+
+        h5 {
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .search-results div {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .search-results div:hover {
+            background-color: #f1f5f9;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-dark);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        button.btn-secondary { background-color: #64748b; }
+        button.btn-accent { background-color: var(--accent-blue); }
+        button.btn-danger { background-color: var(--danger); }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .badge.ok { background: #d1fae5; color: #065f46; }
+        .badge.alert { background: #fee2e2; color: #991b1b; }
+
+        .nav-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background: white;
+            display: flex;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            border-top: 1px solid #e2e8f0;
+            z-index: 99;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #718096;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--primary-dark);
+            font-weight: bold;
+        }
+
+        .nav-icon {
+            font-size: 1.3rem;
+            margin-bottom: 2px;
+        }
+
+        .focused-product-card {
+            background: #f8fafc;
+            border: 2px solid var(--primary-light);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .table-products {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+            min-width: 450px;
+        }
+
+        .table-products th, .table-products td {
+            padding: 8px;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .table-products th {
+            background-color: #f1f5f9;
+            color: var(--primary-dark);
+            font-weight: bold;
+        }
+
+        .total-row {
+            background-color: #e2e8f0;
+            font-weight: bold;
+        }
+
+        .clickable-row:hover {
+            background-color: #f1f5f9;
+        }
+
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            gap: 10px;
+        }
+
+        .pagination-container button {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-top">
+            <h2 id="app-title">PharmaSys - <span id="header-pharmacy-name">Ventes Directes</span></h2>
+            <button id="btn-logout-ui" class="btn-logout" onclick="logoutApp()" style="display:none;">Déconnexion</button>
+        </div>
+        <div class="role-indicator" id="role-text">Veuillez vous connecter</div>
+    </header>
+    
+    <div id="login-screen" style="padding:20px; max-width: 400px; margin: 40px auto;" class="card">
+        <h3>Connexion Cloud Sécurisée</h3>
+        <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Entrez votre code secret pour accéder à la caisse.</p>
+        <div class="form-group">
+            <input id="login-code" type="password" placeholder="Code secret">
+        </div>
+        <button onclick="loginApp()">Se connecter</button>
+    </div>
+
+    <div class="container" style="display:none;">
+        
+        <div id="screen-assistant" class="screen active">
+            <div class="card">
+                <h3>Enregistrer une Vente</h3>
+                <div class="form-group">
+                    <label for="ast-search">🔍 Rechercher le médicament</label>
+                    <input type="text" id="ast-search" placeholder="Tapez le nom pour chercher..." oninput="searchProduct(this.value, 'ast')">
+                    <div id="ast-search-results" class="search-results"></div>
+                </div>
+                
+                <div id="ast-selected-area" style="display:none; background:#f0fdf4; padding:12px; border-radius:6px; margin-bottom:12px;">
+                    <p>👉 Sélectionné : <strong id="ast-selected-name" style="color:var(--primary-dark);">Aucun</strong></p>
+                    <small id="stock-hint" style="color: #4a5568; font-size: 0.85rem; display:block; margin-top:4px; font-weight: 500;"></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="sale-qty">Quantité vendue (Qtes V)</label>
+                    <input type="number" id="sale-qty" min="0.01" step="any" value="1">
+                </div>
+                <button onclick="processSale()">Valider la vente</button>
+            </div>
+
+            <div class="card">
+                <h3>🗂️ Catalogue & Rentabilité Générale</h3>
+                <div class="form-group" style="margin-top: 10px;">
+                    <input type="text" id="filter-catalog-ast" placeholder="Filtrer le tableau instantanément..." oninput="filtrerCatalogueTableau(this.value)">
+                </div>
+                <small id="ast-click-hint" style="color: #64748b; display: none; margin-bottom: 8px;">* En tant qu'admin, cliquez sur une ligne pour modifier/réapprovisionner.</small>
+                <div class="table-responsive">
+                    <table class="table-products">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">N°</th>
+                                <th>Médicament</th>
+                                <th>Stock</th>
+                                <th>P.U.A</th>
+                                <th>P.V.U</th>
+                                <th style="color:#2E7D32;">Bénéf. J.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="catalog-table-body-ast"></tbody>
+                        <tfoot id="catalog-table-foot-ast"></tfoot>
+                    </table>
+                </div>
+                <div class="pagination-container">
+                    <button class="btn-secondary" id="btn-prev-ast" onclick="changerPage(-1)">◀ Précédent</button>
+                    <span id="page-indicator-ast" style="font-size:0.85rem; font-weight:bold;">Page 1</span>
+                    <button class="btn-secondary" id="btn-next-ast" onclick="changerPage(1)">Suivant ▶</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Bilan Ventes Assistant (Journée Sélectionnée)</h3>
+                <div id="assistant-stock-list"></div>
+            </div>
+        </div>
+
+        <div id="screen-mouvements" class="screen">
+            <div class="card">
+                <h3>📜 Journal complet des mouvements</h3>
+                <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Historique global des flux de stock (Ventes, Entrées, Ajustements).</p>
+                <div id="shared-liste-mouvements"></div>
+            </div>
+        </div>
+
+        <div id="screen-admin" class="screen">
+            <div class="card" style="border-left: 4px solid var(--primary-light);">
+                <h3>🏢 Configuration Établissement</h3>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label for="pharmacy-name-input">Modifier le nom de la pharmacie :</label>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <input type="text" id="pharmacy-name-input" placeholder="Ex: Pharmacie de l'Unité">
+                        <button onclick="sauvegarderNomPharmacie()" style="width: auto; margin-top: 0; padding: 0 20px; background-color: var(--primary-light);">Enregistrer</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #2563eb;">
+                <h3>📅 Consultation Historique & Clôture</h3>
+                <div class="form-group">
+                    <label for="filtre-date-admin">Choisir la date d'analyse :</label>
+                    <input type="date" id="filtre-date-admin" onchange="changerDateAnalyse(this.value)">
+                </div>
+                <button class="btn-danger" style="margin-top:10px; font-size:0.9rem;" onclick="reinitialiserVentesCloud()">🚨 Réinitialiser toutes les ventes à 0</button>
+            </div>
+
+            <div class="kpi-container">
+                <div class="kpi-card" style="border-left-color: #0b4f43;">
+                    <div class="kpi-title">Recettes du Jour Sélectionné</div>
+                    <div class="kpi-value" id="kpi-sales" style="color: #0b4f43;">0 Fc</div>
+                </div>
+                <div class="kpi-card" style="border-left-color: #2E7D32;">
+                    <div class="kpi-title">Bénéfice Réel du Jour</div>
+                    <div class="kpi-value" style="color: #2E7D32;" id="kpi-profit">0 Fc</div>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid var(--accent-blue);">
+                <h3>👥 Gestion de l'Équipe (Assistants)</h3>
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px;">
+                    <h5>Créer / Modifier un utilisateur</h5>
+                    <input type="hidden" id="user-id-edit">
+                    <div class="form-group" style="margin-top:8px;">
+                        <input type="text" id="user-name" placeholder="Nom de l'assistant">
+                    </div>
+                    <div class="form-row">
+                        <input type="password" id="user-code" placeholder="Code secret (4 chiffres)">
+                        <select id="user-role">
+                            <option value="assistant">Assistant</option>
+                            <option value="admin">Administrateur</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <button class="btn-accent" style="margin-top:0;" onclick="saveUserCloud()">Sauvegarder</button>
+                        <button class="btn-secondary" style="margin-top:0;" onclick="clearUserForm()">Annuler</button>
+                    </div>
+                </div>
+                <h5>Liste du Personnel</h5>
+                <div id="admin-users-list" style="margin-top:8px;"></div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid var(--warning);">
+                <h3>📦 Historique des Réapprovisionnements</h3>
+                <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Suivi précis des entrées de stocks par produit et auteur.</p>
+                <div id="admin-reapp-log" style="max-height: 250px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="card" id="admin-catalog-section">
+                <h3>🗂️ Vue Catalogue & Rentabilité (A-Z)</h3>
+                <div class="form-group" style="margin-top: 10px;">
+                    <input type="text" id="filter-catalog-adm" placeholder="Filtrer le catalogue..." oninput="filtrerCatalogueTableau(this.value)">
+                </div>
+                <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Cliquez sur la ligne d'un médicament pour charger sa fiche technique ci-dessous.</p>
+                <div class="table-responsive">
+                    <table class="table-products">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">N°</th>
+                                <th>Médicament</th>
+                                <th>Stock</th>
+                                <th>P.U.A</th>
+                                <th>P.V.U</th>
+                                <th style="color:#2E7D32;">Bénéf. J.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="catalog-table-body-adm"></tbody>
+                        <tfoot id="catalog-table-foot-adm"></tfoot>
+                    </table>
+                </div>
+                <div class="pagination-container">
+                    <button class="btn-secondary" id="btn-prev-adm" onclick="changerPage(-1)">◀ Précédent</button>
+                    <span id="page-indicator-adm" style="font-size:0.85rem; font-weight:bold;">Page 1</span>
+                    <button class="btn-secondary" id="btn-next-adm" onclick="changerPage(1)">Suivant ▶</button>
+                </div>
+            </div>
+
+            <div class="card" id="section-focus-modification" style="border-left: 4px solid var(--primary-dark);">
+                <h3>Recherche Rapide & Mises à jour</h3>
+                <div class="form-group">
+                    <label for="adm-search">🔎 Taper le nom du médicament à gérer</label>
+                    <input type="text" id="adm-search" placeholder="Chercher dans le catalogue..." oninput="searchProduct(this.value, 'adm')">
+                    <div id="adm-search-results" class="search-results"></div>
+                </div>
+
+                <div id="adm-focus-card" class="focused-product-card" style="display: none;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                        <h4 id="focus-nom" contenteditable="true" style="color: var(--primary-dark); font-size: 1.1rem; border-bottom: 1px dashed #cbd5e1;">-</h4>
+                        <span id="focus-badge" class="badge ok">Stock Ok</span>
+                    </div>
+                    
+                    <div style="font-size:0.85rem; background:white; padding:8px; border-radius:4px; margin-bottom:12px; border:1px solid #e2e8f0;">
+                        Disponible : <strong id="focus-stock" style="color:var(--primary-dark);">-</strong>
+                    </div>
+
+                    <h5 style="font-size:0.8rem; text-transform:uppercase; color:#64748b; margin-bottom:6px;">🛠️ Ajuster les prix (Francs Congolais)</h5>
+                    <div class="form-row">
+                        <div>
+                            <label style="font-size:0.75rem;">P.U.A (Achat)</label>
+                            <input type="number" step="any" id="focus-input-pua">
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;">P.V.U (Vente)</label>
+                            <input type="number" step="any" id="focus-input-pvu">
+                        </div>
+                    </div>
+
+                    <h5 style="font-size:0.8rem; text-transform:uppercase; color:#a16207; margin-bottom:6px; margin-top:10px;">📦 Entrée de Stock (Réapprovisionnement)</h5>
+                    <div class="form-row" style="grid-template-columns: 2fr 1fr;">
+                        <input type="number" id="focus-input-reapp" min="0.01" step="any" placeholder="Quantité ajoutée">
+                        <button class="btn-secondary" style="padding:10px; margin-top:0;" onclick="applyReapp()">Ajouter</button>
+                    </div>
+
+                    <div class="form-row" style="margin-top: 15px;">
+                        <button class="btn-accent" style="margin-top:0;" onclick="modifierProduit()">💾 Enregistrer Modifs</button>
+                        <button class="btn-danger" style="margin-top:0;" onclick="archiverProduit()">📦 Archiver</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Ajouter un médicament au catalogue</h3>
+                <div class="form-group">
+                    <label for="new-nom">Nom du médicament</label>
+                    <input type="text" id="new-nom" placeholder="Nom commercial / Forme">
+                </div>
+                <div class="form-row">
+                    <div>
+                        <label for="new-stock">Stock Initial</label>
+                        <input type="number" id="new-stock" min="0" step="any" value="0">
+                    </div>
+                    <div>
+                        <label for="new-pua">Prix d'Achat (P.U.A)</label>
+                        <input type="number" id="new-pua" step="any" value="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="new-pvu">Prix de Vente (P.V.U)</label>
+                    <input type="number" id="new-pvu" step="any" value="0">
+                </div>
+                <button class="btn-accent" onclick="addNewProduct()">Créer le Produit</button>
+            </div>
+
+            <div class="card">
+                <h3>Produits archivés</h3>
+                <div id="listeArchives"></div>
+            </div>
+
+            <div class="card">
+                <h3>Journal des Ventes en direct</h3>
+                <div id="admin-sales-log"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="nav-bottom" style="display:none;" id="navigation-bar">
+        <div class="nav-item active" id="nav-assistant" onclick="switchScreen('assistant')">
+            <div class="nav-icon">🛒</div>
+            <div>Caisse Assistant</div>
+        </div>
+        <div class="nav-item" id="nav-mouvements" onclick="switchScreen('mouvements')">
+            <div class="nav-icon">📜</div>
+            <div>Mouvements</div>
+        </div>
+        <div class="nav-item" id="tab-admin-nav" style="display:none;" onclick="switchScreen('admin')">
+            <div class="nav-icon">📊</div>
+            <div>Espace Admin</div>
+        </div>
+    </div>
+
+
+    <script>
+        const SUPABASE_URL = "https://ormkaxagjgfexdzhmvvf.supabase.co"; 
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybWtheGFnamdmZXhkemhtdnZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2OTQ0MTcsImV4cCI6MjA5ODI3MDQxN30.xHAGzAUYWNCS8YIf0BVLUv2Ei_PLJqlTxeXJL_nq9e0";
+        const dbCloud = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let inventaire = [];
+        let historiqueVentes = [];
+        let mouvementsStock = [];
+        let listeUtilisateurs = [];
+        
+        let utilisateurConnecte = null;
+        let totalVentesFc = 0;
+        let totalProfitFc = 0;
+        let selectedProductIdAst = null;
+        let selectedProductIdAdm = null;
+
+        let pageActuelle = 0;
+        const produitsParPage = 25; 
+        let filtreTexteTableau = "";
+
+        // =========================================================================
+        // FONCTION ROBUSTE DE CONVERSION NUMÉRIQUE (Prise en charge virgules Android)
+        // =========================================================================
+        function nombre(valeur) {
+            if (valeur === null || valeur === undefined) return 0;
+            return parseFloat(valeur.toString().replace(",", ".")) || 0;
+        }
+
+        function chargerNomPharmacie() {
+            const nomSauvegarde = localStorage.getItem("customPharmacyName") || "Ventes Directes";
+            const headerNom = document.getElementById("header-pharmacy-name");
+            const inputNom = document.getElementById("pharmacy-name-input");
+            
+            if (headerNom) headerNom.innerText = nomSauvegarde;
+            if (inputNom) inputNom.value = nomSauvegarde;
+        }
+
+        function sauvegarderNomPharmacie() {
+            const inputNom = document.getElementById("pharmacy-name-input");
+            if (!inputNom) return;
+            const nouveauNom = inputNom.value.trim();
+            
+            if (nouveauNom !== "") {
+                localStorage.setItem("customPharmacyName", nouveauNom);
+                chargerNomPharmacie();
+                alert("Nom de la pharmacie mis à jour avec succès !");
+            } else {
+                alert("Veuillez saisir un nom valide.");
+            }
+        }
+
+        async function chargerDonnees() {
+            try {
+                const { data: inv } = await dbCloud.from('inventaire').select('*').order('nom', { ascending: true });
+                const { data: hist } = await dbCloud.from('historique_ventes').select('*').order('created_at', { ascending: false });
+                const { data: mouv } = await dbCloud.from('mouvements_stock').select('*').order('created_at', { ascending: false });
+                const { data: users } = await dbCloud.from('utilisateurs').select('*').order('nom', { ascending: true });
+
+                if (inv) inventaire = inv;
+                if (hist) historiqueVentes = hist;
+                if (mouv) mouvementsStock = mouv;
+                if (users) listeUtilisateurs = users;
+
+                recalculerFinancesGlobales();
+                refreshUI();
+            } catch (e) {
+                console.error("Erreur de synchronisation : ", e);
+            }
+        }
+
+        function listenRealtime() {
+            dbCloud.channel('custom-all-channel')
+            .on('postgres_changes', { event: '*', pattern: 'public' }, () => {
+                chargerDonnees();
+            })
+            .subscribe();
+        }
+
+        function refreshUI() {
+            renderAssistantVendus();
+            renderAdminScreen();
+            renderUsersList();
+            renderReappLog();
+            renderAlphabeticalCatalog(); 
+            renderArchives();
+            chargerNomPharmacie(); 
+            renderMouvements(); 
+        }
+
+        async function loginApp() {
+            const code = document.getElementById("login-code").value.trim();
+            
+            const { data: users, error } = await dbCloud.from('utilisateurs').select('*');
+            if (error || !users) { 
+                alert("Erreur de connexion au serveur Supabase."); 
+                return; 
+            }
+            listeUtilisateurs = users;
+
+            const user = listeUtilisateurs.find(a => a.code === code && a.actif);
+            if (!user) { 
+                alert("Code secret incorrect ou compte désactivé."); 
+                return; 
+            }
+
+            utilisateurConnecte = user;
+            localStorage.setItem("pharma_user_session", JSON.stringify(user));
+            document.getElementById("login-code").value = "";
+            
+            document.getElementById("login-screen").style.display = "none";
+            document.querySelector(".container").style.display = "block";
+            document.getElementById("navigation-bar").style.display = "flex";
+            document.getElementById("btn-logout-ui").style.display = "block";
+            
+            document.getElementById('role-text').innerText = `${user.nom} (${user.role === 'admin' ? 'Administrateur' : 'Assistant'})`;
+            
+            if(utilisateurConnecte.role === 'admin') {
+                document.getElementById("tab-admin-nav").style.display = "flex";
+                document.getElementById("ast-click-hint").style.display = "block";
+            } else {
+                document.getElementById("tab-admin-nav").style.display = "none";
+                document.getElementById("ast-click-hint").style.display = "none";
+            }
+            
+            switchScreen(utilisateurConnecte.role === 'admin' ? 'admin' : 'assistant');
+            
+            await chargerDonnees();
+            listenRealtime();
+        }
+
+        function logoutApp() {
+            utilisateurConnecte = null;
+            localStorage.removeItem("pharma_user_session");
+            document.querySelector(".container").style.display = "none";
+            document.getElementById("navigation-bar").style.display = "none";
+            document.getElementById("btn-logout-ui").style.display = "none";
+            document.getElementById("login-screen").style.display = "block";
+            document.getElementById('role-text').innerText = "Veuillez vous connecter";
+        }
+
+        function extraireDateCible() {
+            let dateCible = document.getElementById("filtre-date-admin")?.value;
+            if (!dateCible) {
+                const aujourdhui = new Date();
+                const offset = aujourdhui.getTimezoneOffset();
+                dateCible = new Date(aujourdhui.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+            }
+            return dateCible;
+        }
+
+        function recalculerFinancesGlobales() {
+            const dateCible = extraireDateCible();
+
+            totalVentesFc = historiqueVentes
+                .filter(v => v.statut === "VALIDE" && v.date === dateCible)
+                .reduce((acc, v) => acc + nombre(v.total || 0), 0);
+                
+            totalProfitFc = historiqueVentes
+                .filter(v => v.statut === "VALIDE" && v.date === dateCible)
+                .reduce((acc, v) => acc + nombre(v.profit || 0), 0);
+        }
+
+        async function changerDateAnalyse(nouvelleDate) {
+            if(!nouvelleDate) return;
+            recalculerFinancesGlobales();
+            refreshUI();
+        }
+
+        async function reinitialiserVentesCloud() {
+            if(confirm("🚨 ATTENTION : Voulez-vous vraiment vider tout l'historique des ventes et remettre les statistiques à 0 ? Cette action effacera les données de vente de Supabase.")) {
+                const codeSecu = prompt("Veuillez saisir le mot de passe de confirmation de l'administrateur (votre code d'accès) :");
+                if(codeSecu === utilisateurConnecte.code) {
+                    try {
+                        const { error } = await dbCloud.from('historique_ventes').delete().neq('id', 'FORCE_KEEP_NONE');
+                        if (error) throw error;
+
+                        alert("Base des ventes réinitialisée avec succès !");
+                        await chargerDonnees();
+                    } catch(err) {
+                        alert("Erreur lors de la réinitialisation : " + err.message);
+                    }
+                } else {
+                    alert("Code secret incorrect. Annulation.");
+                }
+            }
+        }
+
+        async function enregistrerMouvementCloud(type, produit, quantite, avant, apres, observation="") {
+            const maintenant = new Date();
+            const offset = maintenant.getTimezoneOffset();
+            const dateLocaleFormate = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
+            const heureLocale = maintenant.toLocaleTimeString('fr-FR');
+
+            await dbCloud.from('mouvements_stock').insert([{
+                id: Date.now(),
+                date: dateLocaleFormate + " " + heureLocale,
+                assistant: utilisateurConnecte ? utilisateurConnecte.nom : "Système",
+                produit_id: produit.id,
+                produit: produit.nom,
+                type: type,
+                quantite: nombre(quantite),
+                stock_avant: nombre(avant),
+                stock_apres: nombre(apres),
+                observation: observation
+            }]);
+        }
+
+        async function saveUserCloud() {
+            const idEdit = document.getElementById("user-id-edit").value;
+            const nom = document.getElementById("user-name").value.trim();
+            const code = document.getElementById("user-code").value.trim();
+            const role = document.getElementById("user-role").value;
+
+            if(!nom || !code) { alert("Veuillez remplir le nom et le code secret."); return; }
+            const id = idEdit ? parseInt(idEdit) : Date.now();
+            const userPayload = { id, nom, code, role, actif: true };
+
+            const { error } = await dbCloud.from('utilisateurs').upsert([userPayload]);
+            if(error) {
+                alert("Erreur réseau ou code secret doublon.");
+            } else {
+                alert("Utilisateur enregistré avec succès !");
+                clearUserForm();
+                await chargerDonnees();
+            }
+        }
+
+        async function toggleUserStatus(id, currentStatus) {
+            await dbCloud.from('utilisateurs').update({ actif: !currentStatus }).eq('id', id);
+            await chargerDonnees();
+        }
+
+        async function deleteUserCloud(id) {
+            if(id === 99) { alert("Impossible de supprimer le compte Administrateur principal."); return; }
+            if(confirm("Confirmez-vous la suppression définitive de cet utilisateur ?")) {
+                await dbCloud.from('utilisateurs').delete().eq('id', id);
+                await chargerDonnees();
+            }
+        }
+
+        function editUserForm(id, nom, code, role) {
+            document.getElementById("user-id-edit").value = id;
+            document.getElementById("user-name").value = nom;
+            document.getElementById("user-code").value = code;
+            document.getElementById("user-role").value = role;
+        }
+
+        function clearUserForm() {
+            document.getElementById("user-id-edit").value = "";
+            document.getElementById("user-name").value = "";
+            document.getElementById("user-code").value = "";
+            document.getElementById("user-role").value = "assistant";
+        }
+
+        function renderUsersList() {
+            const container = document.getElementById("admin-users-list");
+            if(!container) return;
+            container.innerHTML = "";
+
+            listeUtilisateurs.forEach(u => {
+                const statusLabel = u.actif ? "🟢 Actif" : "🔴 Bloqué";
+                const btnStatusClass = u.actif ? "btn-secondary" : "btn-accent";
+                
+                container.innerHTML += `
+                    <div class="list-item" style="font-size:0.85rem; background:#f1f5f9; padding:8px; margin-bottom:5px; border-radius:6px;">
+                        <div>
+                            <strong>${u.nom}</strong> (${u.role.toUpperCase()}) <br>
+                            <small style="color:#64748b;">Code: **** | Statut: ${statusLabel}</small>
+                        </div>
+                        <div style="display:flex; gap:4px;">
+                            <button onclick="editUserForm(${u.id}, '${u.nom}', '${u.code}', '${u.role}')" style="width:auto; padding:4px 8px; font-size:0.75rem; background:#2563eb; margin:0;">📝</button>
+                            <button onclick="toggleUserStatus(${u.id}, ${u.actif})" style="width:auto; padding:4px 8px; font-size:0.75rem; margin:0;" class="${btnStatusClass}">${u.actif ? 'Bloquer':'Activer'}</button>
+                            <button onclick="deleteUserCloud(${u.id})" style="width:auto; padding:4px 8px; font-size:0.75rem; background:#dc2626; margin:0;">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // =========================================================================
+        // CORRECTION COMPARAISON ROBUSTE SANS NEW DATE (Format YYYY-MM-DD)
+        // =========================================================================
+        function renderReappLog() {
+    const container = document.getElementById("admin-reapp-log");
+    if(!container) return;
+    container.innerHTML = "";
+
+    const dateCible = extraireDateCible(); // Exemple: "2026-06-29"
+    
+    // CONVERSION DU FORMAT: "2026-06-29" devient "29/06/2026"
+    const fragments = dateCible.split("-");
+    const dateFormateeFr = `${fragments[2]}/${fragments[1]}/${fragments[0]}`;
+
+    // Filtrage avec le format correspondant à votre base Supabase
+    const reapps = mouvementsStock.filter(m => m.type === "REAPPRO" && m.date && m.date.startsWith(dateFormateeFr));
+    
+    if(reapps.length === 0) {
+        container.innerHTML = `<p style="color:#718096; font-size:0.85rem; text-align:center;">Aucun réapprovisionnement enregistré pour cette date.</p>`;
+        return;
+    }
+
+    reapps.forEach(r => {
+        container.innerHTML += `
+            <div class="list-item" style="font-size:0.85rem; background:#fffbeb; border-left:3px solid var(--warning); padding:8px; margin-bottom:5px;">
+                <div>
+                    🗃️ <strong>${r.produit}</strong> <br>
+                    <small style="color:#64748b;">Le ${r.date}</small> <br>
+                    Auteur : <strong style="color:var(--primary-dark);">${r.assistant}</strong>
+                </div>
+                <div style="text-align:right;">
+                    <span style="color:#b45309; font-weight:bold;">+ ${parseFloat(r.quantite)} u.</span> <br>
+                    <small style="color:#64748b;">Total: ${parseFloat(r.stock_apres)}</small>
+                </div>
+            </div>
+        `;
+    });
+}
+
+
+
+        function filtrerCatalogueTableau(texte) {
+            filtreTexteTableau = texte.toLowerCase().trim();
+            pageActuelle = 0; 
+            renderAlphabeticalCatalog();
+        }
+
+        function changerPage(direction) {
+            pageActuelle += direction;
+            if (pageActuelle < 0) pageActuelle = 0;
+            renderAlphabeticalCatalog();
+        }
+
+        function renderAlphabeticalCatalog() {
+            const tbodyAst = document.getElementById("catalog-table-body-ast");
+            const tbodyAdm = document.getElementById("catalog-table-body-adm");
+            const tfootAst = document.getElementById("catalog-table-foot-ast");
+            const tfootAdm = document.getElementById("catalog-table-foot-adm");
+            
+            if (tbodyAst) tbodyAst.innerHTML = "";
+            if (tbodyAdm) tbodyAdm.innerHTML = "";
+            if (tfootAst) tfootAst.innerHTML = "";
+            if (tfootAdm) tfootAdm.innerHTML = "";
+
+            let listeFiltree = inventaire.filter(p => p.actif !== false);
+            if (filtreTexteTableau !== "") {
+                listeFiltree = listeFiltree.filter(p => p.nom.toLowerCase().includes(filtreTexteTableau));
+            }
+
+            const dateAujourdhui = extraireDateCible();
+
+            let sommePua = 0;
+            let sommePvu = 0;
+            let sommeBeneficesJ = 0;
+
+            listeFiltree.forEach(p => {
+                sommePua += nombre(p.pua || 0);
+                sommePvu += nombre(p.pvu || 0);
+                const benef = historiqueVentes
+                    .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui)
+                    .reduce((acc, v) => acc + nombre(v.profit || 0), 0);
+                sommeBeneficesJ += benef;
+            });
+
+            const indexDebut = pageActuelle * produitsParPage;
+            const indexFin = indexDebut + produitsParPage;
+            const produitsAafficher = listeFiltree.slice(indexDebut, indexFin);
+
+            const totalPages = Math.ceil(listeFiltree.length / produitsParPage) || 1;
+            const txtPage = `Page ${pageActuelle + 1} / ${totalPages}`;
+            
+            if(document.getElementById("page-indicator-ast")) document.getElementById("page-indicator-ast").innerText = txtPage;
+            if(document.getElementById("page-indicator-adm")) document.getElementById("page-indicator-adm").innerText = txtPage;
+
+            if(document.getElementById("btn-prev-ast")) document.getElementById("btn-prev-ast").disabled = (pageActuelle === 0);
+            if(document.getElementById("btn-prev-adm")) document.getElementById("btn-prev-adm").disabled = (pageActuelle === 0);
+            if(document.getElementById("btn-next-ast")) document.getElementById("btn-next-ast").disabled = (indexFin >= listeFiltree.length);
+            if(document.getElementById("btn-next-adm")) document.getElementById("btn-next-adm").disabled = (indexFin >= listeFiltree.length);
+
+            let compteurLigne = indexDebut + 1;
+
+            produitsAafficher.forEach(p => {
+                const beneficeGeneres = historiqueVentes
+                    .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui)
+                    .reduce((acc, v) => acc + nombre(v.profit || 0), 0);
+
+                const trContent = `
+                    <td style="color: #64748b; font-weight: bold;">${compteurLigne}</td>
+                    <td><strong>${p.nom}</strong></td>
+                    <td><span class="badge ${nombre(p.stock) <= 5 ? 'alert':'ok'}">${nombre(p.stock)}</span></td>
+                    <td style="color:#64748b; font-weight:500;">${nombre(p.pua || 0)} Fc</td>
+                    <td style="font-weight:600;">${nombre(p.pvu || 0)} Fc</td>
+                    <td style="color:#2E7D32; font-weight:bold; background:#f0fdf4;">${beneficeGeneres} Fc</td>
+                `;
+
+                if (tbodyAst) {
+                    const tr = document.createElement("tr");
+                    tr.className = "clickable-row";
+                    tr.innerHTML = trContent;
+                    if (utilisateurConnecte && utilisateurConnecte.role === 'admin') {
+                        tr.style.cursor = "pointer";
+                        tr.onclick = () => {
+                            switchScreen('admin');
+                            selectProduct(p.id, 'adm');
+                            document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' });
+                        };
+                    }
+                    tbodyAst.appendChild(tr);
+                }
+
+                if (tbodyAdm) {
+                    const tr = document.createElement("tr");
+                    tr.className = "clickable-row";
+                    tr.style.cursor = "pointer";
+                    tr.innerHTML = trContent;
+                    tr.onclick = () => {
+                        selectProduct(p.id, 'adm');
+                        document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' });
+                    };
+                    tbodyAdm.appendChild(tr);
+                }
+                compteurLigne++;
+            });
+
+            const footContent = `
+                <tr class="total-row">
+                    <td colspan="2">TOTAL</td>
+                    <td>-</td>
+                    <td>${sommePua.toFixed(2)} Fc</td>
+                    <td>${sommePvu.toFixed(2)} Fc</td>
+                    <td style="color:#1b5e20; background:#c8e6c9;">${sommeBeneficesJ.toFixed(2)} Fc</td>
+                </tr>
+            `;
+            if (tfootAst && produitsAafficher.length > 0) tfootAst.innerHTML = footContent;
+            if (tfootAdm && produitsAafficher.length > 0) tfootAdm.innerHTML = footContent;
+
+            if (produitsAafficher.length === 0) {
+                const trVide = `<tr><td colspan="6" style="text-align:center; color:#718096; padding:20px;">Aucun produit trouvé</td></tr>`;
+                if(tbodyAst) tbodyAst.innerHTML = trVide;
+                if(tbodyAdm) tbodyAdm.innerHTML = trVide;
+            }
+        }
+
+        function searchProduct(query, mode) {
+            const resultsDiv = document.getElementById(`${mode}-search-results`);
+            if (!query.trim()) { resultsDiv.style.display = 'none'; return; }
+
+            const cleanQuery = query.toLowerCase();
+            const filtered = inventaire.filter(p => p.actif !== false && p.nom.toLowerCase().includes(cleanQuery)).slice(0, 5);
+
+            if (filtered.length === 0) {
+                resultsDiv.innerHTML = '<div style="padding:10px; color:#718096;">Aucun produit trouvé</div>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+
+            resultsDiv.innerHTML = '';
+            filtered.forEach(p => {
+                const row = document.createElement('div');
+                row.innerText = `${p.nom} (Stock: ${nombre(p.stock)})`;
+                row.onclick = () => selectProduct(p.id, mode);
+                resultsDiv.appendChild(row);
+            });
+            resultsDiv.style.display = 'block';
+        }
+
+        function selectProduct(id, mode) {
+            const resultsDiv = document.getElementById(`${mode}-search-results`);
+            if (resultsDiv) resultsDiv.style.display = 'none';
+            document.getElementById(`${mode}-search`).value = '';
+            const produit = inventaire.find(p => p.id === id);
+
+            if (mode === 'ast') {
+                selectedProductIdAst = id;
+                document.getElementById('ast-selected-area').style.display = 'block';
+                document.getElementById('ast-selected-name').innerText = produit.nom;
+                document.getElementById('stock-hint').innerText = `En stock : ${nombre(produit.stock)} | P.V.U : ${nombre(produit.pvu)} Fc`;
+            } else if (mode === 'adm') {
+                selectedProductIdAdm = id;
+                showAdminFocusCard(produit);
+            }
+        }
+
+        function showAdminFocusCard(produit) {
+            document.getElementById('adm-focus-card').style.display = 'block';
+            document.getElementById('focus-nom').innerText = produit.nom;
+            document.getElementById('focus-stock').innerText = nombre(produit.stock);
+            document.getElementById('focus-input-pua').value = produit.pua;
+            document.getElementById('focus-input-pvu').value = produit.pvu;
+            document.getElementById('focus-input-reapp').value = '';
+
+            const badge = document.getElementById('focus-badge');
+            if (nombre(produit.stock) <= 5) {
+                badge.innerText = "Réappro nécessaire";
+                badge.className = "badge alert";
+            } else {
+                badge.innerText = "Stock Ok";
+                badge.className = "badge ok";
+            }
+        }
+
+        async function processSale() {
+            if (!utilisateurConnecte || !selectedProductIdAst) return;
+
+            const qty = nombre(document.getElementById("sale-qty").value);
+            const produit = inventaire.find(p => p.id == selectedProductIdAst);
+
+            if (isNaN(qty) || qty <= 0 || qty > nombre(produit.stock)) { alert("Quantité incorrecte ou stock insuffisant."); return; }
+
+            const idVente = "V" + Date.now().toString().slice(-6);
+            const avant = nombre(produit.stock);
+            const apres = nombre((avant - qty).toFixed(2)); // Prévention contre les bugs décimaux JS
+
+            await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
+
+            const maintenant = new Date();
+            const offset = maintenant.getTimezoneOffset();
+            const dateLocale = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
+            const heureLocale = maintenant.toLocaleTimeString("fr-FR");
+
+            const pvu = nombre(produit.pvu || 0);
+            const pua = nombre(produit.pua || 0);
+            const totalCalculated = nombre((qty * pvu).toFixed(2));
+            const profitCalculated = nombre((qty * (pvu - pua)).toFixed(2));
+
+            await dbCloud.from('historique_ventes').insert([{
+                id: idVente,
+                date: dateLocale, 
+                heure: heureLocale, 
+                assistant: utilisateurConnecte.nom,
+                assistant_id: utilisateurConnecte.id,
+                produit_id: produit.id,
+                nom: produit.nom,
+                quantite: qty,
+                pua: pua,
+                pvu: pvu,
+                total: totalCalculated,
+                profit: profitCalculated,
+                statut: "VALIDE"
+            }]);
+
+            await enregistrerMouvementCloud("VENTE", produit, qty, avant, apres, "Vente " + idVente);
+            
+            document.getElementById("sale-qty").value = 1;
+            document.getElementById("ast-selected-area").style.display = "none";
+            selectedProductIdAst = null;
+            await chargerDonnees();
+        }
+
+        async function annulerVente(idVente) {
+            const vente = historiqueVentes.find(v => v.id === idVente);
+            if (!vente || vente.statut === "ANNULEE" || !confirm("Annuler cette vente cloud ?")) return;
+
+            const produit = inventaire.find(p => p.id === vente.produit_id);
+            if (produit) {
+                const avant = nombre(produit.stock);
+                const apres = nombre((avant + nombre(vente.quantite)).toFixed(2));
+                await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
+                await enregistrerMouvementCloud("ANNULATION", produit, vente.quantite, avant, apres, vente.id);
+            }
+
+            await dbCloud.from('historique_ventes').update({ statut: "ANNULEE" }).eq('id', idVente);
+            await chargerDonnees();
+        }
+
+        async function applyReapp() {
+            if (!selectedProductIdAdm) return;
+            const qty = nombre(document.getElementById('focus-input-reapp').value);
+            const produit = inventaire.find(p => p.id === selectedProductIdAdm);
+
+            if (isNaN(qty) || qty <= 0) return;
+            const avant = nombre(produit.stock);
+            const apres = nombre((avant + qty).toFixed(2)); // Correction pour éviter les résidus binaires JS (ex: 10.5000001)
+
+            await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
+            await enregistrerMouvementCloud("REAPPRO", produit, qty, avant, apres, "Réappro Cloud");
+            
+            document.getElementById('focus-input-reapp').value = ''; // Vider le champ après succès
+            alert(`Réapprovisionnement de ${qty} pour "${produit.nom}" validé !`);
+            await chargerDonnees();
+        }
+
+        async function addNewProduct() {
+            const nom = document.getElementById('new-nom').value.trim();
+            const stockInit = nombre(document.getElementById('new-stock').value);
+            const pua = nombre(document.getElementById('new-pua').value);
+            const pvu = nombre(document.getElementById('new-pvu').value);
+
+            if (!nom) { alert("Veuillez saisir au moins le nom du médicament."); return; }
+
+            const nouveau = { id: Date.now(), nom, stock: stockInit, pua, pvu, actif: true };
+
+            await dbCloud.from('inventaire').insert([nouveau]);
+            await enregistrerMouvementCloud("AJUSTEMENT", nouveau, stockInit, 0, stockInit, "Création Cloud");
+            
+            document.getElementById('new-nom').value = '';
+            document.getElementById('new-stock').value = '0';
+            document.getElementById('new-pua').value = '0';
+            document.getElementById('new-pvu').value = '0';
+            
+            await chargerDonnees();
+            alert(`Produit "${nom}" ajouté au Cloud !`);
+        }
+
+        async function modifierProduit() {
+            if (!selectedProductIdAdm) return;
+            const produit = inventaire.find(p => p.id === selectedProductIdAdm);
+            if (produit) {
+                const nNom = document.getElementById("focus-nom").innerText;
+                const nPua = nombre(document.getElementById("focus-input-pua").value);
+                const nPvu = nombre(document.getElementById("focus-input-pvu").value);
+
+                await dbCloud.from('inventaire').update({ nom: nNom, pua: nPua, pvu: nPvu }).eq('id', produit.id);
+                await enregistrerMouvementCloud("MODIF_PRIX", produit, 0, produit.pvu, nPvu, "Changement Prix/Nom");
+                
+                alert("Modifications enregistrées sur Supabase.");
+                await chargerDonnees();
+            }
+        }
+
+        async function archiverProduit() {
+            if (!selectedProductIdAdm) return;
+            await dbCloud.from('inventaire').update({ actif: false }).eq('id', selectedProductIdAdm);
+            document.getElementById('adm-focus-card').style.display = 'none';
+            selectedProductIdAdm = null;
+            await chargerDonnees();
+        }
+
+        async function restaurerProduit(id) {
+            await dbCloud.from('inventaire').update({ actif: true }).eq('id', id);
+            await chargerDonnees();
+        }
+
+        function renderAssistantVendus() {
+            const list = document.getElementById('assistant-stock-list');
+            if(!list) return;
+            list.innerHTML = '';
+            let aDesVentes = false;
+
+            const dateAujourdhui = extraireDateCible();
+
+            inventaire.forEach(p => {
+                const totalVenduProd = historiqueVentes
+                    .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui)
+                    .reduce((s,v) => s + nombre(v.quantite || 0), 0); 
+
+                if(totalVenduProd > 0) {
+                    aDesVentes = true;
+                    list.innerHTML += `
+                        <div class="list-item">
+                            <div><strong>${p.nom}</strong></div>
+                            <div style="text-align: right;">
+                                <span>Vendus : <strong style="color:var(--accent-blue);">${totalVenduProd}</strong></span> | 
+                                <span>Dispo : <strong>${nombre(p.stock)}</strong></span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (!aDesVentes) list.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucune vente enregistrée pour cette date.</p>';
+        }
+
+        // =========================================================================
+        // CORRECTION DE RENDERMOUVEMENTS SANS CONVERSION PAR NEW DATE
+        // =========================================================================
+        function renderMouvements() {
+    const div = document.getElementById("shared-liste-mouvements");
+    if (!div) return;
+    div.innerHTML = "";
+
+    const dateCible = extraireDateCible(); // Exemple: "2026-06-29"
+    
+    // CONVERSION DU FORMAT: "2026-06-29" devient "29/06/2026"
+    const fragments = dateCible.split("-");
+    const dateFormateeFr = `${fragments[2]}/${fragments[1]}/${fragments[0]}`;
+
+    // Filtrage avec le bon format
+    const mouvementsFilitres = mouvementsStock.filter(m => m.date && m.date.startsWith(dateFormateeFr));
+
+    if (mouvementsFilitres.length === 0) { div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucun mouvement pour cette date.</p>'; return; }
+
+    mouvementsFilitres.forEach(m => {
+        let badgeStyle = "background: #cbd5e1; color: #1e293b;";
+        let label = m.type;
+        if (m.type === "VENTE") { badgeStyle = "background: #d1fae5; color: #065f46;"; label = "🟢 VENTE"; }
+        else if (m.type === "REAPPRO") { badgeStyle = "background: #dbeafe; color: #1e40af;"; label = "🔵 RÉAPPRO"; }
+        else if (m.type === "AJUSTEMENT") { badgeStyle = "background: #ffedd5; color: #9a3412;"; label = "🟠 AJUSTEMENT"; }
+        else if (m.type === "ANNULATION") { badgeStyle = "background: #fee2e2; color: #991b1b;"; label = "🔴 ANNULATION"; }
+        else if (m.type === "MODIF_PRIX") { badgeStyle = "background: #f3e8ff; color: #6b21a8;"; label = "🟣 PRIX"; }
+
+        div.innerHTML += `
+            <div class="list-item" style="font-size:0.85rem;">
+                <div>
+                    <span class="badge" style="${badgeStyle}">${label}</span>
+                    <br><small style="color:#64748b;">${m.date} par ${m.assistant}</small>
+                    <br><strong>${m.produit}</strong> <small style="color:#64748b;">(${m.observation || ''})</small>
+                </div>
+                <div style="text-align:right; font-weight:600;">${parseFloat(m.stock_avant)} &rarr; ${parseFloat(m.stock_apres)}</div>
+            </div>
+        `;
+    });
+}
+
+
+
+        function renderArchives() {
+            const div = document.getElementById("listeArchives");
+            if (!div) return;
+            div.innerHTML = "";
+            const archives = inventaire.filter(p => p.actif === false);
+
+            if (archives.length === 0) { div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucun produit archivé.</p>'; return; }
+
+            archives.forEach(p => {
+                div.innerHTML += `
+                    <div class="list-item">
+                        <div><strong>${p.nom}</strong></div>
+                        <button class="btn-secondary" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="restaurerProduit(${p.id})">Restaurer</button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderAdminScreen() {
+            document.getElementById('kpi-sales').innerText = `${totalVentesFc.toFixed(2).replace('.00', '')} Fc`;
+            document.getElementById('kpi-profit').innerText = `${totalProfitFc.toFixed(2).replace('.00', '')} Fc`;
+
+            if (selectedProductIdAdm) {
+                const p = inventaire.find(prod => prod.id === selectedProductIdAdm);
+                if (p) showAdminFocusCard(p);
+            }
+
+            const log = document.getElementById('admin-sales-log');
+            const dateCible = extraireDateCible();
+            
+            const ventesFiltrées = historiqueVentes.filter(v => v.date === dateCible);
+
+            if (ventesFiltrées.length === 0) {
+                log.innerHTML = `<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucune vente en direct pour cette date.</p>`;
+            } else {
+                log.innerHTML = '';
+                ventesFiltrées.forEach(v => {
+                    const statusBadge = v.statut === "VALIDE" ? '<span style="color:green;font-weight:bold;">✔ Valide</span>' : '<span style="color:red;font-weight:bold;">✖ Annulée</span>';
+                    const cancelBtn = v.statut === "VALIDE" ? `<button style="margin-top:8px; background:#dc2626; padding:6px; font-size:12px; width:auto;" onclick="annulerVente('${v.id}')">Annuler</button>` : '';
+
+                    log.innerHTML += `
+                        <div class="list-item" style="font-size:0.85rem; background:#f8fafc; padding:8px; margin-bottom:4px; border-radius:4px;">
+                            <div>
+                                <b>${v.id}</b> | ${statusBadge}<br>
+                                <small>${v.date} ${v.heure} - par ${v.assistant}</small><br>
+                                <b>${v.nom}</b> x${nombre(v.quantite)} ${cancelBtn}
+                            </div>
+                            <span style="color:var(--primary-dark); font-weight:bold;">${nombre(v.total)} Fc</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function switchScreen(role) {
+            const screenAst = document.getElementById('screen-assistant');
+            const screenMouv = document.getElementById('screen-mouvements');
+            const screenAdm = document.getElementById('screen-admin');
+
+            if (screenAst) { screenAst.style.display = 'none'; screenAst.classList.remove('active'); }
+            if (screenMouv) { screenMouv.style.display = 'none'; screenMouv.classList.remove('active'); }
+            if (screenAdm) { screenAdm.style.display = 'none'; screenAdm.classList.remove('active'); }
+
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none');
+
+            filtreTexteTableau = "";
+            pageActuelle = 0;
+            if(document.getElementById("filter-catalog-ast")) document.getElementById("filter-catalog-ast").value = "";
+            if(document.getElementById("filter-catalog-adm")) document.getElementById("filter-catalog-adm").value = "";
+
+            const nomPharmacie = localStorage.getItem("customPharmacyName") || "Ventes Directes";
+
+            if (role === 'assistant') {
+                if (screenAst) { screenAst.style.display = 'block'; screenAst.classList.add('active'); }
+                document.getElementById('nav-assistant').classList.add('active');
+                
+                document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
+                
+                if(utilisateurConnecte) {
+                    document.getElementById('role-text').innerText = `${utilisateurConnecte.nom} (${utilisateurConnecte.role === 'admin' ? 'Administrateur' : 'Assistant'})`;
+                }
+                renderAssistantVendus();
+                renderAlphabeticalCatalog();
+            } else if (role === 'mouvements') {
+                if (screenMouv) { screenMouv.style.display = 'block'; screenMouv.classList.add('active'); }
+                document.getElementById('nav-mouvements').classList.add('active');
+                
+                document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
+                renderMouvements();
+            } else {
+                if (screenAdm) { screenAdm.style.display = 'block'; screenAdm.classList.add('active'); }
+                document.getElementById('tab-admin-nav').classList.add('active');
+                
+                document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
+                renderAdminScreen();
+                renderAlphabeticalCatalog();
+            }
+        }
+
+        window.onload = async function() {
+            localStorage.removeItem("pharma_user"); 
+            chargerNomPharmacie(); 
+            
+            const aujourdhui = new Date();
+            const offset = aujourdhui.getTimezoneOffset();
+            const dateLocale = new Date(aujourdhui.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+            
+            const pika = document.getElementById("filtre-date-admin");
+            if (pika) {
+                pika.value = dateLocale;
+            }
+
+            const sessionActive = localStorage.getItem("pharma_user_session");
+            if (sessionActive) {
+                try {
+                    const user = JSON.parse(sessionActive);
+                    utilisateurConnecte = user;
+                    
+                    document.getElementById("login-screen").style.display = "none";
+                    document.querySelector(".container").style.display = "block";
+                    document.getElementById("navigation-bar").style.display = "flex";
+                    document.getElementById("btn-logout-ui").style.display = "block";
+                    
+                    document.getElementById('role-text').innerText = `${user.nom} (${user.role === 'admin' ? 'Administrateur' : 'Assistant'})`;
+                    
+                    if(utilisateurConnecte.role === 'admin') {
+                        document.getElementById("tab-admin-nav").style.display = "flex";
+                        document.getElementById("ast-click-hint").style.display = "block";
+                    } else {
+                        document.getElementById("tab-admin-nav").style.display = "none";
+                        document.getElementById("ast-click-hint").style.display = "none";
+                    }
+                    
+                    switchScreen(utilisateurConnecte.role === 'admin' ? 'admin' : 'assistant');
+                    
+                    await chargerDonnees();
+                    listenRealtime();
+                } catch(e) {
+                    console.error("Échec de restauration de session", e);
+                }
+            }
+        };
+    </script>
+</body>
+</html>
