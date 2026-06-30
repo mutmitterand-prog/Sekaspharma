@@ -1,6 +1,6 @@
 const CACHE_NAME = 'pharmasys-cache-v1';
 const ASSETS = [
-  './Pharma6.html',
+  './index.html',
   './manifest.json',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
 ];
