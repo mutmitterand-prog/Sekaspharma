@@ -699,14 +699,15 @@
         }
 
         function refreshUI() {
-            renderAssistantVendus();
-            renderAdminScreen();
-            renderUsersList();
-            renderReappLog();
-            renderAlphabeticalCatalog(); 
-            renderArchives();
-            chargerNomPharmacie(); 
-            renderMouvements(); 
+            // On appelle la bonne fonction (renderBilanVentes) et on sécurise l'exécution
+            try { renderBilanVentes(); } catch(e) { console.error(e); }
+            try { renderAdminScreen(); } catch(e) { console.error(e); }
+            try { renderUsersList(); } catch(e) { console.error(e); }
+            try { renderReappLog(); } catch(e) { console.error(e); }
+            try { renderAlphabeticalCatalog(); } catch(e) { console.error(e); }
+            try { renderArchives(); } catch(e) { console.error(e); }
+            try { chargerNomPharmacie(); } catch(e) { console.error(e); }
+            try { renderMouvements(); } catch(e) { console.error(e); }
         }
 
         async function loginApp() {
@@ -785,7 +786,19 @@
         async function changerDateAnalyse(nouvelleDate) {
             if(!nouvelleDate) return;
             recalculerFinancesGlobales();
-            refreshUI();
+            
+            // On force la reconstruction immédiate de l'écran sans changer d'onglet
+            if (utilisateurConnecte) {
+                if (utilisateurConnecte.role === 'admin') {
+                    renderAdminScreen();
+                    renderAlphabeticalCatalog();
+                    renderReappLog();
+                } else {
+                    renderBilanVentes();
+                    renderAlphabeticalCatalog();
+                }
+                renderMouvements();
+            }
         }
 
         async function reinitialiserVentesCloud() {
@@ -839,17 +852,23 @@
             const code = document.getElementById("user-code").value.trim();
             const role = document.getElementById("user-role").value;
 
-            if(!nom || !code) { alert("Veuillez remplir le nom et le code secret."); return; }
+            if(!nom || !code) { 
+                alert("Veuillez remplir le nom et le code secret."); 
+                return; 
+            }
+            
             const id = idEdit ? parseInt(idEdit) : Date.now();
             const userPayload = { id, nom, code, role, actif: true };
 
-            const { error } = await dbCloud.from('utilisateurs').upsert([userPayload]);
-            if(error) {
-                alert("Erreur réseau ou code secret doublon.");
-            } else {
+            try {
+                const { error } = await dbCloud.from('utilisateurs').upsert([userPayload]);
+                if(error) throw error;
+                
                 alert("Utilisateur enregistré avec succès !");
                 clearUserForm();
-                await chargerDonnees();
+                await chargerDonnees(); // Va recharger et réafficher la liste proprement
+            } catch (err) {
+                alert("Erreur réseau ou code secret doublon : " + err.message);
             }
         }
 
@@ -874,10 +893,20 @@
         }
 
         function clearUserForm() {
-            document.getElementById("user-id-edit").value = "";
-            document.getElementById("user-name").value = "";
-            document.getElementById("user-code").value = "";
-            document.getElementById("user-role").value = "assistant";
+            const idEdit = document.getElementById("user-id-edit");
+            const nameInput = document.getElementById("user-name");
+            const codeInput = document.getElementById("user-code");
+            const roleSelect = document.getElementById("user-role");
+            const toggleIcon = document.getElementById("toggle-user-code");
+
+            if (idEdit) idEdit.value = "";
+            if (nameInput) nameInput.value = "";
+            if (codeInput) {
+                codeInput.value = "";
+                codeInput.setAttribute("type", "password");
+            }
+            if (roleSelect) roleSelect.value = "assistant";
+            if (toggleIcon) toggleIcon.textContent = "👁️";
         }
 
         function renderUsersList() {
@@ -885,20 +914,28 @@
             if(!container) return;
             container.innerHTML = "";
 
+            if (!listeUtilisateurs || listeUtilisateurs.length === 0) {
+                container.innerHTML = `<p style="color:#718096; font-size:0.85rem; text-align:center; padding:10px;">Aucun personnel trouvé.</p>`;
+                return;
+            }
+
             listeUtilisateurs.forEach(u => {
                 const statusLabel = u.actif ? "🟢 Actif" : "🔴 Bloqué";
                 const btnStatusClass = u.actif ? "btn-secondary" : "btn-accent";
                 
+                // Masquage visuel du code secret dans la liste (ex: ****) pour la sécurité
+                const codeMasque = "****"; 
+
                 container.innerHTML += `
-                    <div class="list-item" style="font-size:0.85rem; background:#f1f5f9; padding:8px; margin-bottom:5px; border-radius:6px;">
+                    <div class="list-item" style="font-size:0.85rem; background:#f1f5f9; padding:8px; margin-bottom:5px; border-radius:6px; display:flex; justify-content:between; align-items:center;">
                         <div>
                             <strong>${u.nom}</strong> (${u.role.toUpperCase()}) <br>
-                            <small style="color:#64748b;">Code: ${u.code} | Statut: ${statusLabel}</small>
+                            <small style="color:#64748b;">Code: ${codeMasque} | Statut: ${statusLabel}</small>
                         </div>
                         <div style="display:flex; gap:4px;">
-                            <button onclick="editUserForm(${u.id}, '${u.nom}', '${u.code}', '${u.role}')" style="width:auto; padding:4px 8px; font-size:0.75rem; background:#2563eb; margin:0;">📝</button>
-                            <button onclick="toggleUserStatus(${u.id}, ${u.actif})" style="width:auto; padding:4px 8px; font-size:0.75rem; margin:0;" class="${btnStatusClass}">${u.actif ? 'Bloquer':'Activer'}</button>
-                            <button onclick="deleteUserCloud(${u.id})" style="width:auto; padding:4px 8px; font-size:0.75rem; background:#dc2626; margin:0;">🗑️</button>
+                            <button onclick="editUserForm(${u.id}, '${u.nom.replace(/'/g, "\\'")}', '${u.code}', '${u.role}')" style="width:auto; padding:6px 10px; font-size:0.75rem; background:#2563eb; margin:0; color:white; border-radius:4px;">📝</button>
+                            <button onclick="toggleUserStatus(${u.id}, ${u.actif})" style="width:auto; padding:6px 10px; font-size:0.75rem; margin:0; border-radius:4px;" class="${btnStatusClass}">${u.actif ? 'Bloquer':'Activer'}</button>
+                            <button onclick="deleteUserCloud(${u.id})" style="width:auto; padding:6px 10px; font-size:0.75rem; background:#dc2626; margin:0; color:white; border-radius:4px;">🗑️</button>
                         </div>
                     </div>
                 `;
