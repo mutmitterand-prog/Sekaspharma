@@ -394,9 +394,14 @@
                 </div>
             </div>
 
-            <div class="card">
-                <h3>Bilan Ventes Assistant (Journée Sélectionnée)</h3>
-                <div id="assistant-stock-list"></div>
+            <div class="card" style="border-left: 4px solid #0b4f43;">
+                <h3>📊 Bilan Ventes Assistant (Journée Sélectionnée)</h3>
+                <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
+                    <input type="text" id="filter-bilan-ventes" placeholder="Rechercher un produit dans le bilan..." oninput="renderBilanVentes()">
+                </div>
+                <div id="containerBilanVentes" style="max-height: 350px; overflow-y: auto; padding-right: 4px;">
+                    <div id="listeBilanVentes"></div>
+                </div>
             </div>
         </div>
 
@@ -441,6 +446,7 @@
             </div>
 
             <div class="card" style="border-left: 4px solid var(--accent-blue);">
+                <div class="card" style="border-left: 4px solid var(--accent-blue);">
     <h3>👥 Gestion de l'Équipe (Assistants)</h3>
     <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px;">
         <h5>Créer / Modifier un utilisateur</h5>
@@ -467,7 +473,6 @@
     <h5>Liste du Personnel</h5>
     <div id="admin-users-list" style="margin-top:8px;"></div>
 </div>
-
 
             <div class="card" style="border-left: 4px solid var(--warning);">
                 <h3>📦 Historique des Réapprovisionnements</h3>
@@ -534,6 +539,11 @@
                         </div>
                     </div>
 
+                    <div class="form-group" style="margin-top:10px;">
+                        <label style="font-size:0.8rem; font-weight:600; color:var(--text-dark);">Date d'expiration / Péremption</label>
+                        <input type="date" id="focus-input-peremption">
+                    </div>
+
                     <h5 style="font-size:0.8rem; text-transform:uppercase; color:#a16207; margin-bottom:6px; margin-top:10px;">📦 Entrée de Stock (Réapprovisionnement)</h5>
                     <div class="form-row" style="grid-template-columns: 2fr 1fr;">
                         <input type="number" id="focus-input-reapp" min="0.01" step="any" placeholder="Quantité ajoutée">
@@ -567,21 +577,29 @@
                     <label for="new-pvu">Prix de Vente (P.V.U)</label>
                     <input type="number" id="new-pvu" step="any" value="0">
                 </div>
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label for="new-peremption">Date d'expiration / Péremption</label>
+                    <input type="date" id="new-peremption">
+                </div>
                 <button class="btn-accent" onclick="addNewProduct()">Créer le Produit</button>
             </div>
 
-            <div class="card">
-                <h3>Produits archivés</h3>
-                <div id="listeArchives"></div>
+            <div class="card" style="border-left: 4px solid #64748b;">
+                <h3>📦 Produits archivés</h3>
+                <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
+                    <input type="text" id="filter-archives" placeholder="Rechercher un produit archivé..." oninput="renderArchives()">
+                </div>
+                <div id="listeArchives" style="max-height: 280px; overflow-y: auto; padding-right: 4px;"></div>
             </div>
 
             <div class="card">
                 <h3>Journal des Ventes en direct</h3>
-                <div id="admin-sales-log"></div>
+                <div id="admin-sales-log" style="max-height: 400px; overflow-y: auto; padding-right: 4px;"></div>
             </div>
         </div>
 
     </div>
+
 
     <div class="nav-bottom" style="display:none;" id="navigation-bar">
         <div class="nav-item active" id="nav-assistant" onclick="switchScreen('assistant')">
@@ -619,16 +637,27 @@
         const produitsParPage = 25; 
         let filtreTexteTableau = "";
 
-        // =========================================================================
-        // FONCTION ROBUSTE DE CONVERSION NUMÉRIQUE (Prise en charge virgules Android)
-        // =========================================================================
         function nombre(valeur) {
             if (valeur === null || valeur === undefined) return 0;
             return parseFloat(valeur.toString().replace(",", ".")) || 0;
         }
 
+        // Calcule si le produit expire dans moins de 60 jours par rapport à la date d'analyse choisie
+        function verifierPeremptionProche(datePeremption) {
+            if (!datePeremption) return false;
+            
+            const dateRefText = extraireDateCible(); 
+            const dateRef = new Date(dateRefText);
+            const dateExp = new Date(datePeremption);
+            
+            const differenceEnTemps = dateExp.getTime() - dateRef.getTime();
+            const differenceEnJours = differenceEnTemps / (1000 * 3600 * 24);
+            
+            return differenceEnJours <= 60;
+        }
+
         function chargerNomPharmacie() {
-            const nomSauvegarde = localStorage.getItem("customPharmacyName") || "Ventes Directes";
+            const nomSauvegarde = localStorage.getItem("customPharmacyName") || "Sekas pharma";
             const headerNom = document.getElementById("header-pharmacy-name");
             const inputNom = document.getElementById("pharmacy-name-input");
             
@@ -644,7 +673,7 @@
             if (nouveauNom !== "") {
                 localStorage.setItem("customPharmacyName", nouveauNom);
                 chargerNomPharmacie();
-                alert("Nom de la pharmacie mis à jour avec succès !");
+                alert("Nom de la pharmacie mis à jour localement !");
             } else {
                 alert("Veuillez saisir un nom valide.");
             }
@@ -667,14 +696,6 @@
             } catch (e) {
                 console.error("Erreur de synchronisation : ", e);
             }
-        }
-
-        function listenRealtime() {
-            dbCloud.channel('custom-all-channel')
-            .on('postgres_changes', { event: '*', pattern: 'public' }, () => {
-                chargerDonnees();
-            })
-            .subscribe();
         }
 
         function refreshUI() {
@@ -742,9 +763,9 @@
         function extraireDateCible() {
             let dateCible = document.getElementById("filtre-date-admin")?.value;
             if (!dateCible) {
-                const aujourdhui = new Date();
-                const offset = aujourdhui.getTimezoneOffset();
-                dateCible = new Date(aujourdhui.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+                const maintenant = new Date();
+                const offset = maintenant.getTimezoneOffset();
+                dateCible = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
             }
             return dateCible;
         }
@@ -788,14 +809,13 @@
 
         async function enregistrerMouvementCloud(type, produit, quantite, avant, apres, observation="") {
             const maintenant = new Date();
-            const offset = maintenant.getTimezoneOffset();
-            const dateLocaleFormate = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
-            const heureLocale = maintenant.toLocaleTimeString('fr-FR');
+            const fragments = maintenant.toLocaleDateString('fr-FR').split('/');
+            const dateFormateeFr = `${fragments[0]}/${fragments[1]}/${fragments[2]} ${maintenant.toLocaleTimeString('fr-FR')}`;
 
-            await dbCloud.from('mouvements_stock').insert([{
-                id: Date.now(),
-                date: dateLocaleFormate + " " + heureLocale,
-                assistant: utilisateurConnecte ? utilisateurConnecte.nom : "Système",
+            const nouveauMouvement = {
+                created_at: maintenant.toISOString(),
+                date: dateFormateeFr,
+                assistant: utilisateurConnecte ? utilisateurConnecte.nom : "Testeur",
                 produit_id: produit.id,
                 produit: produit.nom,
                 type: type,
@@ -803,7 +823,14 @@
                 stock_avant: nombre(avant),
                 stock_apres: nombre(apres),
                 observation: observation
-            }]);
+            };
+
+            try {
+                const { error } = await dbCloud.from('mouvements_stock').insert([nouveauMouvement]);
+                if (error) throw error;
+            } catch (err) {
+                console.error("Erreur d'enregistrement du mouvement sur Supabase:", err.message);
+            }
         }
 
         async function saveUserCloud() {
@@ -866,7 +893,7 @@
                     <div class="list-item" style="font-size:0.85rem; background:#f1f5f9; padding:8px; margin-bottom:5px; border-radius:6px;">
                         <div>
                             <strong>${u.nom}</strong> (${u.role.toUpperCase()}) <br>
-                            <small style="color:#64748b;">Code: **** | Statut: ${statusLabel}</small>
+                            <small style="color:#64748b;">Code: ${u.code} | Statut: ${statusLabel}</small>
                         </div>
                         <div style="display:flex; gap:4px;">
                             <button onclick="editUserForm(${u.id}, '${u.nom}', '${u.code}', '${u.role}')" style="width:auto; padding:4px 8px; font-size:0.75rem; background:#2563eb; margin:0;">📝</button>
@@ -878,9 +905,6 @@
             });
         }
 
-        // =========================================================================
-        // CORRECTION COMPARAISON ROBUSTE SANS NEW DATE (Format YYYY-MM-DD)
-        // =========================================================================
         function renderReappLog() {
     const container = document.getElementById("admin-reapp-log");
     if(!container) return;
@@ -916,8 +940,6 @@
         `;
     });
 }
-
-
 
         function filtrerCatalogueTableau(texte) {
             filtreTexteTableau = texte.toLowerCase().trim();
@@ -984,10 +1006,15 @@
                     .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui)
                     .reduce((acc, v) => acc + nombre(v.profit || 0), 0);
 
+                // Logique d'affichage dynamique en rouge selon la date d'expiration
+                const estProchePeremption = verifierPeremptionProche(p.peremption);
+                const styleNom = estProchePeremption ? 'color: #dc2626; font-weight: bold;' : '';
+                const affichageDate = p.peremption ? `<br><small style="color:#718096; font-weight:normal;">Exp: ${p.peremption.split('-').reverse().join('/')}</small>` : '';
+
                 const trContent = `
                     <td style="color: #64748b; font-weight: bold;">${compteurLigne}</td>
-                    <td><strong>${p.nom}</strong></td>
-                    <td><span class="badge ${nombre(p.stock) <= 5 ? 'alert':'ok'}">${nombre(p.stock)}</span></td>
+                    <td><span style="${styleNom}">${p.nom}</span>${affichageDate}</td>
+                    <td><span class="badge ${nombre(p.stock) <= 2 ? 'alert':'ok'}">${nombre(p.stock)}</span></td>
                     <td style="color:#64748b; font-weight:500;">${nombre(p.pua || 0)} Fc</td>
                     <td style="font-weight:600;">${nombre(p.pvu || 0)} Fc</td>
                     <td style="color:#2E7D32; font-weight:bold; background:#f0fdf4;">${beneficeGeneres} Fc</td>
@@ -1057,7 +1084,8 @@
             resultsDiv.innerHTML = '';
             filtered.forEach(p => {
                 const row = document.createElement('div');
-                row.innerText = `${p.nom} (Stock: ${nombre(p.stock)})`;
+                const badgeAlert = verifierPeremptionProche(p.peremption) ? 'color: #dc2626; font-weight:bold;' : '';
+                row.innerHTML = `<span style="${badgeAlert}">${p.nom}</span> (Stock: ${nombre(p.stock)})`;
                 row.onclick = () => selectProduct(p.id, mode);
                 resultsDiv.appendChild(row);
             });
@@ -1074,7 +1102,15 @@
                 selectedProductIdAst = id;
                 document.getElementById('ast-selected-area').style.display = 'block';
                 document.getElementById('ast-selected-name').innerText = produit.nom;
-                document.getElementById('stock-hint').innerText = `En stock : ${nombre(produit.stock)} | P.V.U : ${nombre(produit.pvu)} Fc`;
+                
+                // Alerte visuelle textuelle aussi lors de l'enregistrement de la vente
+                if (verifierPeremptionProche(produit.peremption)) {
+                    document.getElementById('ast-selected-name').style.color = '#dc2626';
+                } else {
+                    document.getElementById('ast-selected-name').style.color = 'var(--primary-dark)';
+                }
+                
+                document.getElementById('stock-hint').innerText = `En stock : ${nombre(produit.stock)} | P.V.U : ${nombre(produit.pvu)} Fc ${produit.peremption ? '| Périm. : ' + produit.peremption.split('-').reverse().join('/') : ''}`;
             } else if (mode === 'adm') {
                 selectedProductIdAdm = id;
                 showAdminFocusCard(produit);
@@ -1087,15 +1123,24 @@
             document.getElementById('focus-stock').innerText = nombre(produit.stock);
             document.getElementById('focus-input-pua').value = produit.pua;
             document.getElementById('focus-input-pvu').value = produit.pvu;
+            document.getElementById('focus-input-peremption').value = produit.peremption || '';
             document.getElementById('focus-input-reapp').value = '';
 
             const badge = document.getElementById('focus-badge');
-            if (nombre(produit.stock) <= 5) {
+            
+            // Priorité au badge d'alerte si le produit expire bientôt
+            if (verifierPeremptionProche(produit.peremption)) {
+                badge.innerText = "Péremption proche !";
+                badge.className = "badge alert";
+                document.getElementById('focus-nom').style.color = '#dc2626';
+            } else if (nombre(produit.stock) <= 2) {
                 badge.innerText = "Réappro nécessaire";
                 badge.className = "badge alert";
+                document.getElementById('focus-nom').style.color = 'var(--primary-dark)';
             } else {
                 badge.innerText = "Stock Ok";
                 badge.className = "badge ok";
+                document.getElementById('focus-nom').style.color = 'var(--primary-dark)';
             }
         }
 
@@ -1206,15 +1251,29 @@
             if (!selectedProductIdAdm) return;
             const produit = inventaire.find(p => p.id === selectedProductIdAdm);
             if (produit) {
-                const nNom = document.getElementById("focus-nom").innerText;
+                const nNom = document.getElementById("focus-nom").innerText.trim();
                 const nPua = nombre(document.getElementById("focus-input-pua").value);
                 const nPvu = nombre(document.getElementById("focus-input-pvu").value);
+                const nPeremption = document.getElementById("focus-input-peremption").value;
 
-                await dbCloud.from('inventaire').update({ nom: nNom, pua: nPua, pvu: nPvu }).eq('id', produit.id);
-                await enregistrerMouvementCloud("MODIF_PRIX", produit, 0, produit.pvu, nPvu, "Changement Prix/Nom");
-                
-                alert("Modifications enregistrées sur Supabase.");
-                await chargerDonnees();
+                try {
+                    // Envoi des modifications sur le Cloud
+                    const { error } = await dbCloud.from('inventaire').update({
+                        nom: nNom,
+                        pua: nPua,
+                        pvu: nPvu,
+                        peremption: nPeremption || null
+                    }).eq('id', produit.id);
+
+                    if (error) throw error;
+
+                    await enregistrerMouvementCloud("MODIF_PRIX", { id: produit.id, nom: nNom }, 0, produit.pvu, nPvu, "Chgmt Caractéristiques");
+                    
+                    alert("Modifications enregistrées avec succès sur Supabase !");
+                    await chargerDonnees();
+                } catch (err) {
+                    alert("Erreur lors de la modification sur le Cloud : " + err.message);
+                }
             }
         }
 
@@ -1231,25 +1290,34 @@
             await chargerDonnees();
         }
 
-        function renderAssistantVendus() {
-            const list = document.getElementById('assistant-stock-list');
-            if(!list) return;
-            list.innerHTML = '';
+        function renderBilanVentes() {
+            const div = document.getElementById("listeBilanVentes");
+            if (!div) return;
+            div.innerHTML = "";
             let aDesVentes = false;
 
-            const dateAujourdhui = extraireDateCible();
+            const dateCible = extraireDateCible();
+            const filtreInput = document.getElementById("filter-bilan-ventes");
+            const filtreTexte = filtreInput ? filtreInput.value.toLowerCase().trim() : "";
 
             inventaire.forEach(p => {
                 const totalVenduProd = historiqueVentes
-                    .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui)
+                    .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateCible)
                     .reduce((s,v) => s + nombre(v.quantite || 0), 0); 
 
                 if(totalVenduProd > 0) {
+                    if (filtreTexte !== "" && !p.nom.toLowerCase().includes(filtreTexte)) {
+                        return; 
+                    }
+                    
+                    const estProchePeremption = verifierPeremptionProche(p.peremption);
+                    const styleNom = estProchePeremption ? 'color: #dc2626; font-weight: bold;' : '';
+                    
                     aDesVentes = true;
-                    list.innerHTML += `
-                        <div class="list-item">
-                            <div><strong>${p.nom}</strong></div>
-                            <div style="text-align: right;">
+                    div.innerHTML += `
+                        <div class="list-item" style="font-size:0.9rem; padding:12px 8px; border-bottom:1px solid #edf2f7;">
+                            <div><strong style="${styleNom}">${p.nom}</strong></div>
+                            <div style="text-align: right; font-size:0.85rem; color:#4a5568;">
                                 <span>Vendus : <strong style="color:var(--accent-blue);">${totalVenduProd}</strong></span> | 
                                 <span>Dispo : <strong>${nombre(p.stock)}</strong></span>
                             </div>
@@ -1258,65 +1326,70 @@
                 }
             });
 
-            if (!aDesVentes) list.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucune vente enregistrée pour cette date.</p>';
+            if (!aDesVentes) {
+                div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem; padding:10px;">Aucune vente à afficher.</p>';
+            }
         }
 
-        // =========================================================================
-        // CORRECTION DE RENDERMOUVEMENTS SANS CONVERSION PAR NEW DATE
-        // =========================================================================
         function renderMouvements() {
-    const div = document.getElementById("shared-liste-mouvements");
-    if (!div) return;
-    div.innerHTML = "";
+            const div = document.getElementById("shared-liste-mouvements");
+            if (!div) return;
+            div.innerHTML = "";
 
-    const dateCible = extraireDateCible(); // Exemple: "2026-06-29"
-    
-    // CONVERSION DU FORMAT: "2026-06-29" devient "29/06/2026"
-    const fragments = dateCible.split("-");
-    const dateFormateeFr = `${fragments[2]}/${fragments[1]}/${fragments[0]}`;
+            const dateCible = extraireDateCible(); 
+            const fragments = dateCible.split("-");
+            const dateFormateeFr = `${fragments[2]}/${fragments[1]}/${fragments[0]}`;
 
-    // Filtrage avec le bon format
-    const mouvementsFilitres = mouvementsStock.filter(m => m.date && m.date.startsWith(dateFormateeFr));
+            const mouvementsFilitres = mouvementsStock.filter(m => m.date && m.date.startsWith(dateFormateeFr));
 
-    if (mouvementsFilitres.length === 0) { div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucun mouvement pour cette date.</p>'; return; }
+            if (mouvementsFilitres.length === 0) { div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucun mouvement pour cette date.</p>'; return; }
 
-    mouvementsFilitres.forEach(m => {
-        let badgeStyle = "background: #cbd5e1; color: #1e293b;";
-        let label = m.type;
-        if (m.type === "VENTE") { badgeStyle = "background: #d1fae5; color: #065f46;"; label = "🟢 VENTE"; }
-        else if (m.type === "REAPPRO") { badgeStyle = "background: #dbeafe; color: #1e40af;"; label = "🔵 RÉAPPRO"; }
-        else if (m.type === "AJUSTEMENT") { badgeStyle = "background: #ffedd5; color: #9a3412;"; label = "🟠 AJUSTEMENT"; }
-        else if (m.type === "ANNULATION") { badgeStyle = "background: #fee2e2; color: #991b1b;"; label = "🔴 ANNULATION"; }
-        else if (m.type === "MODIF_PRIX") { badgeStyle = "background: #f3e8ff; color: #6b21a8;"; label = "🟣 PRIX"; }
+            mouvementsFilitres.forEach(m => {
+                let badgeStyle = "background: #cbd5e1; color: #1e293b;";
+                let label = m.type;
+                if (m.type === "VENTE") { badgeStyle = "background: #d1fae5; color: #065f46;"; label = "🟢 VENTE"; }
+                else if (m.type === "REAPPRO") { badgeStyle = "background: #dbeafe; color: #1e40af;"; label = "🔵 RÉAPPRO"; }
+                else if (m.type === "AJUSTEMENT") { badgeStyle = "background: #ffedd5; color: #9a3412;"; label = "🟠 AJUSTEMENT"; }
+                else if (m.type === "ANNULATION") { badgeStyle = "background: #fee2e2; color: #991b1b;"; label = "🔴 ANNULATION"; }
+                else if (m.type === "MODIF_PRIX") { badgeStyle = "background: #f3e8ff; color: #6b21a8;"; label = "🟣 PRIX"; }
 
-        div.innerHTML += `
-            <div class="list-item" style="font-size:0.85rem;">
-                <div>
-                    <span class="badge" style="${badgeStyle}">${label}</span>
-                    <br><small style="color:#64748b;">${m.date} par ${m.assistant}</small>
-                    <br><strong>${m.produit}</strong> <small style="color:#64748b;">(${m.observation || ''})</small>
-                </div>
-                <div style="text-align:right; font-weight:600;">${parseFloat(m.stock_avant)} &rarr; ${parseFloat(m.stock_apres)}</div>
-            </div>
-        `;
-    });
-}
-
-
+                div.innerHTML += `
+                    <div class="list-item" style="font-size:0.85rem;">
+                        <div>
+                            <span class="badge" style="${badgeStyle}">${label}</span>
+                            <br><small style="color:#64748b;">${m.date} par ${m.assistant}</small>
+                            <br><strong>${m.produit}</strong> <small style="color:#64748b;">(${m.observation || ''})</small>
+                        </div>
+                        <div style="text-align:right; font-weight:600;">${parseFloat(m.stock_avant)} &rarr; ${parseFloat(m.stock_apres)}</div>
+                    </div>
+                `;
+            });
+        }
 
         function renderArchives() {
             const div = document.getElementById("listeArchives");
             if (!div) return;
             div.innerHTML = "";
-            const archives = inventaire.filter(p => p.actif === false);
+            
+            const filtreInput = document.getElementById("filter-archives");
+            const filtreTexte = filtreInput ? filtreInput.value.toLowerCase().trim() : "";
+            
+            let archives = inventaire.filter(p => p.actif === false);
+            
+            if (filtreTexte !== "") {
+                archives = archives.filter(p => p.nom.toLowerCase().includes(filtreTexte));
+            }
 
-            if (archives.length === 0) { div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucun produit archivé.</p>'; return; }
+            if (archives.length === 0) { 
+                div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem; padding:10px;">Aucun produit archivé.</p>'; 
+                return; 
+            }
 
             archives.forEach(p => {
                 div.innerHTML += `
-                    <div class="list-item">
+                    <div class="list-item" style="font-size:0.85rem; background:#f8fafc; padding:10px; margin-bottom:6px; border-radius:6px; border: 1px solid #e2e8f0;">
                         <div><strong>${p.nom}</strong></div>
-                        <button class="btn-secondary" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="restaurerProduit(${p.id})">Restaurer</button>
+                        <button class="btn-secondary" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0; background:#475569;" onclick="restaurerProduit(${p.id})">Restaurer</button>
                     </div>
                 `;
             });
@@ -1375,29 +1448,26 @@
             if(document.getElementById("filter-catalog-ast")) document.getElementById("filter-catalog-ast").value = "";
             if(document.getElementById("filter-catalog-adm")) document.getElementById("filter-catalog-adm").value = "";
 
-            const nomPharmacie = localStorage.getItem("customPharmacyName") || "Ventes Directes";
+            const nomPharmacie = localStorage.getItem("customPharmacyName") || "Sekas pharma";
 
             if (role === 'assistant') {
                 if (screenAst) { screenAst.style.display = 'block'; screenAst.classList.add('active'); }
                 document.getElementById('nav-assistant').classList.add('active');
-                
                 document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
                 
                 if(utilisateurConnecte) {
                     document.getElementById('role-text').innerText = `${utilisateurConnecte.nom} (${utilisateurConnecte.role === 'admin' ? 'Administrateur' : 'Assistant'})`;
                 }
-                renderAssistantVendus();
+                renderBilanVentes();
                 renderAlphabeticalCatalog();
             } else if (role === 'mouvements') {
                 if (screenMouv) { screenMouv.style.display = 'block'; screenMouv.classList.add('active'); }
                 document.getElementById('nav-mouvements').classList.add('active');
-                
                 document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
                 renderMouvements();
             } else {
                 if (screenAdm) { screenAdm.style.display = 'block'; screenAdm.classList.add('active'); }
                 document.getElementById('tab-admin-nav').classList.add('active');
-                
                 document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
                 renderAdminScreen();
                 renderAlphabeticalCatalog();
@@ -1408,13 +1478,11 @@
             localStorage.removeItem("pharma_user"); 
             chargerNomPharmacie(); 
             
-            const aujourdhui = new Date();
-            const offset = aujourdhui.getTimezoneOffset();
-            const dateLocale = new Date(aujourdhui.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
-            
             const pika = document.getElementById("filtre-date-admin");
             if (pika) {
-                pika.value = dateLocale;
+                const maintenant = new Date();
+                const offset = maintenant.getTimezoneOffset();
+                pika.value = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
             }
 
             const sessionActive = localStorage.getItem("pharma_user_session");
@@ -1474,7 +1542,6 @@ clearUserForm = function() {
         toggleUserCode.textContent = "👁️";
     }
 };
-
     </script>
 </body>
 </html>
