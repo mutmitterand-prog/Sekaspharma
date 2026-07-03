@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PharmaSys Mobile - Cloud Synchro & Gestion</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0b4f43">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0A5C43">
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -15,17 +15,21 @@
         }
     </script>
 
-    
     <style>
         :root {
-            --primary-dark: #0b4f43; /* Vert Malachite Foncé */
-            --primary-light: #10b981; /* Vert Émeraude */
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-dark: #2d3748;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --accent-blue: #2563eb;
+            --primary-dark: #0A5C43; /* Vert foncé Header et Titres */
+            --primary-light: #337A65; /* Vert Badge / Admin */
+            --bg-color: #F4F7F6; /* Fond général de la page */
+            --card-bg: #FFFFFF;
+            --text-dark: #2D3748;
+            --danger: #A61C1C; /* Rouge Déconnexion */
+            --warning: #F59E0B;
+            --accent-blue: #1A53A1; /* Bleu P.U.A / P.V.U */
+            --accent-green: #10A36E; /* Vert P.V.U.Tot / P.A.Tot / Bénéfices */
+            --bg-blue-light: #EEF3FC; /* Fond bleu très clair */
+            --bg-green-light: #EAF7F2; /* Fond vert très clair */
+            --bg-blue-evo: #D6E6F7; /* Fond bleu/gris Évo stock */
+            --btn-nav-gray: #5A738E; /* Bleu ardoise boutons de navigation */
         }
 
         * {
@@ -61,7 +65,7 @@
         }
 
         .btn-logout {
-            background: #991b1b;
+            background: var(--danger);
             color: white;
             border: none;
             padding: 5px 10px;
@@ -74,7 +78,8 @@
 
         .role-indicator {
             font-size: 0.8rem;
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--primary-light);
+            color: #FFFFFF;
             padding: 3px 10px;
             border-radius: 10px;
             display: inline-block;
@@ -134,7 +139,7 @@
             margin-bottom: 15px;
             color: var(--primary-dark);
             font-size: 1.1rem;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #E2E8F0;
             padding-bottom: 5px;
         }
 
@@ -166,7 +171,7 @@
         select, input {
             width: 100%;
             padding: 10px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #CCCCCC;
             border-radius: 6px;
             font-size: 0.95rem;
         }
@@ -177,7 +182,7 @@
             left: 0;
             right: 0;
             background: white;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #CBD5E1;
             border-top: none;
             border-radius: 0 0 6px 6px;
             max-height: 200px;
@@ -190,11 +195,11 @@
         .search-results div {
             padding: 10px;
             cursor: pointer;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #F1F5F9;
         }
 
         .search-results div:hover {
-            background-color: #f1f5f9;
+            background-color: #F1F5F9;
         }
 
         button {
@@ -210,7 +215,7 @@
             margin-top: 5px;
         }
 
-        button.btn-secondary { background-color: #64748b; }
+        button.btn-secondary { background-color: var(--btn-nav-gray); }
         button.btn-accent { background-color: var(--accent-blue); }
         button.btn-danger { background-color: var(--danger); }
 
@@ -219,7 +224,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid #edf2f7;
+            border-bottom: 1px solid #EDF2F7;
         }
 
         .badge {
@@ -229,8 +234,8 @@
             font-weight: bold;
         }
 
-        .badge.ok { background: #d1fae5; color: #065f46; }
-        .badge.alert { background: #fee2e2; color: #991b1b; }
+        .badge.ok { background: #D1FAE5; color: #065F46; }
+        .badge.alert { background: #FEE2E2; color: #A61C1C; }
 
         .nav-bottom {
             position: fixed;
@@ -241,7 +246,7 @@
             background: white;
             display: flex;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #E2E8F0;
             z-index: 99;
         }
 
@@ -252,7 +257,7 @@
             align-items: center;
             justify-content: center;
             font-size: 0.8rem;
-            color: #718096;
+            color: #6C757D;
             cursor: pointer;
         }
 
@@ -267,7 +272,7 @@
         }
 
         .focused-product-card {
-            background: #f8fafc;
+            background: #F8FAFC;
             border: 2px solid var(--primary-light);
             border-radius: 8px;
             padding: 15px;
@@ -285,27 +290,27 @@
             border-collapse: collapse;
             font-size: 0.85rem;
             text-align: left;
-            min-width: 450px;
+            min-width: 650px;
         }
 
         .table-products th, .table-products td {
             padding: 8px;
-            border-bottom: 1px solid #edf2f7;
+            border-bottom: 1px solid #EDF2F7;
         }
 
         .table-products th {
-            background-color: #f1f5f9;
+            background-color: #F1F5F9;
             color: var(--primary-dark);
             font-weight: bold;
         }
 
         .total-row {
-            background-color: #e2e8f0;
+            background-color: #E2E8F0;
             font-weight: bold;
         }
 
         .clickable-row:hover {
-            background-color: #f1f5f9;
+            background-color: #F1F5F9;
         }
 
         .pagination-container {
@@ -320,6 +325,77 @@
             padding: 8px 12px;
             font-size: 0.85rem;
             margin-top: 0;
+        }
+
+        /* ---------------- CONFIGURATION DE LA GRILLE DE NAVIGATION ADMIN ---------------- */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .menu-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+            border: 1px solid #E2E8F0;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .menu-card:active {
+            transform: scale(0.96);
+            background: #F8FAFC;
+        }
+
+        .menu-icon {
+            font-size: 1.8rem;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .menu-card h4 {
+            font-size: 0.95rem;
+            color: var(--primary-dark);
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .menu-card p {
+            font-size: 0.75rem;
+            color: #718096;
+            line-height: 1.2;
+        }
+
+        .btn-back-admin {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #E2E8F0;
+            color: var(--text-dark);
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .btn-back-admin:active {
+            background-color: #CBD5E1;
+        }
+
+        .admin-section {
+            animation: fadeInAdmin 0.25s ease-out;
+        }
+
+        @keyframes fadeInAdmin {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -353,9 +429,9 @@
                     <div id="ast-search-results" class="search-results"></div>
                 </div>
                 
-                <div id="ast-selected-area" style="display:none; background:#f0fdf4; padding:12px; border-radius:6px; margin-bottom:12px;">
+                <div id="ast-selected-area" style="display:none; background:#F0FDF4; padding:12px; border-radius:6px; margin-bottom:12px;">
                     <p>👉 Sélectionné : <strong id="ast-selected-name" style="color:var(--primary-dark);">Aucun</strong></p>
-                    <small id="stock-hint" style="color: #4a5568; font-size: 0.85rem; display:block; margin-top:4px; font-weight: 500;"></small>
+                    <small id="stock-hint" style="color: #4A5568; font-size: 0.85rem; display:block; margin-top:4px; font-weight: 500;"></small>
                 </div>
 
                 <div class="form-group">
@@ -379,8 +455,11 @@
                                 <th>Médicament</th>
                                 <th>Stock</th>
                                 <th>P.U.A</th>
+                                <th style="color:var(--accent-green);">P.A.Tot</th>
                                 <th>P.V.U</th>
-                                <th style="color:#2E7D32;">Bénéf. J.</th>
+                                <th style="color:var(--accent-green);">P.V.Tot</th>
+                                <th style="color:var(--accent-blue);">Évol Stock</th>
+                                <th style="color:var(--accent-green);">Bénéf. J.</th>
                             </tr>
                         </thead>
                         <tbody id="catalog-table-body-ast"></tbody>
@@ -394,7 +473,7 @@
                 </div>
             </div>
 
-            <div class="card" style="border-left: 4px solid #0b4f43;">
+            <div class="card" style="border-left: 4px solid var(--primary-dark);">
                 <h3>📊 Bilan Ventes Assistant (Journée Sélectionnée)</h3>
                 <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
                     <input type="text" id="filter-bilan-ventes" placeholder="Rechercher un produit dans le bilan..." oninput="renderBilanVentes()">
@@ -414,192 +493,233 @@
         </div>
 
         <div id="screen-admin" class="screen">
-            <div class="card" style="border-left: 4px solid var(--primary-light);">
-                <h3>🏢 Configuration Établissement</h3>
-                <div class="form-group" style="margin-top: 10px;">
-                    <label for="pharmacy-name-input">Modifier le nom de la pharmacie :</label>
-                    <div style="display: flex; gap: 8px; margin-top: 5px;">
-                        <input type="text" id="pharmacy-name-input" placeholder="Ex: Pharmacie de l'Unité">
-                        <button onclick="sauvegarderNomPharmacie()" style="width: auto; margin-top: 0; padding: 0 20px; background-color: var(--primary-light);">Enregistrer</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid #2563eb;">
-                <h3>📅 Consultation Historique & Clôture</h3>
-                <div class="form-group">
-                    <label for="filtre-date-admin">Choisir la date d'analyse :</label>
-                    <input type="date" id="filtre-date-admin" onchange="changerDateAnalyse(this.value)">
-                </div>
-                <button class="btn-danger" style="margin-top:10px; font-size:0.9rem;" onclick="reinitialiserVentesCloud()">🚨 Réinitialiser toutes les ventes à 0</button>
-            </div>
-
-            <div class="kpi-container">
-                <div class="kpi-card" style="border-left-color: #0b4f43;">
-                    <div class="kpi-title">Recettes du Jour Sélectionné</div>
-                    <div class="kpi-value" id="kpi-sales" style="color: #0b4f43;">0 Fc</div>
-                </div>
-                <div class="kpi-card" style="border-left-color: #2E7D32;">
-                    <div class="kpi-title">Bénéfice Réel du Jour</div>
-                    <div class="kpi-value" style="color: #2E7D32;" id="kpi-profit">0 Fc</div>
-                </div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid var(--accent-blue);">
-                <div class="card" style="border-left: 4px solid var(--accent-blue);">
-    <h3>👥 Gestion de l'Équipe (Assistants)</h3>
-    <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px;">
-        <h5>Créer / Modifier un utilisateur</h5>
-        <input type="hidden" id="user-id-edit">
-        <div class="form-group" style="margin-top:8px;">
-            <input type="text" id="user-name" placeholder="Nom de l'assistant">
-        </div>
-        <div class="form-row">
-            <div class="password-wrapper" style="position: relative; flex: 1;">
-                <input type="password" id="user-code" placeholder="Code secret (4 chiffres)" style="width: 100%; padding-right: 35px;">
-                <span id="toggle-user-code" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; opacity: 0.6;">👁️</span>
-            </div>
             
-            <select id="user-role">
-                <option value="assistant">Assistant</option>
-                <option value="admin">Administrateur</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <button class="btn-accent" style="margin-top:0;" onclick="saveUserCloud()">Sauvegarder</button>
-            <button class="btn-secondary" style="margin-top:0;" onclick="clearUserForm()">Annuler</button>
-        </div>
-    </div>
-    <h5>Liste du Personnel</h5>
-    <div id="admin-users-list" style="margin-top:8px;"></div>
-</div>
-
-            <div class="card" style="border-left: 4px solid var(--warning);">
-                <h3>📦 Historique des Réapprovisionnements</h3>
-                <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Suivi précis des entrées de stocks par produit et auteur.</p>
-                <div id="admin-reapp-log" style="max-height: 250px; overflow-y: auto;"></div>
-            </div>
-
-            <div class="card" id="admin-catalog-section">
-                <h3>🗂️ Vue Catalogue & Rentabilité (A-Z)</h3>
-                <div class="form-group" style="margin-top: 10px;">
-                    <input type="text" id="filter-catalog-adm" placeholder="Filtrer le catalogue..." oninput="filtrerCatalogueTableau(this.value)">
+            <div id="admin-main-menu-grid" class="admin-grid">
+                <div class="menu-card" onclick="openAdminSubSection('sub-admin-config')">
+                    <span class="menu-icon">⚙️</span>
+                    <h4>Configuration</h4>
+                    <p>Nom établissement, dates & réinitialisation</p>
                 </div>
-                <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Cliquez sur la ligne d'un médicament pour charger sa fiche technique ci-dessous.</p>
-                <div class="table-responsive">
-                    <table class="table-products">
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;">N°</th>
-                                <th>Médicament</th>
-                                <th>Stock</th>
-                                <th>P.U.A</th>
-                                <th>P.V.U</th>
-                                <th style="color:#2E7D32;">Bénéf. J.</th>
-                            </tr>
-                        </thead>
-                        <tbody id="catalog-table-body-adm"></tbody>
-                        <tfoot id="catalog-table-foot-adm"></tfoot>
-                    </table>
+                <div class="menu-card" onclick="openAdminSubSection('sub-admin-finances')">
+                    <span class="menu-icon">📊</span>
+                    <h4>Rapports & Finances</h4>
+                    <p>KPIs, Recettes, Catalogue complet & logs direct</p>
                 </div>
-                <div class="pagination-container">
-                    <button class="btn-secondary" id="btn-prev-adm" onclick="changerPage(-1)">◀ Précédent</button>
-                    <span id="page-indicator-adm" style="font-size:0.85rem; font-weight:bold;">Page 1</span>
-                    <button class="btn-secondary" id="btn-next-adm" onclick="changerPage(1)">Suivant ▶</button>
+                <div class="menu-card" onclick="openAdminSubSection('sub-admin-equipe')">
+                    <span class="menu-icon">👥</span>
+                    <h4>Gestion d'Équipe</h4>
+                    <p>Création, édition et blocage d'assistants</p>
+                </div>
+                <div class="menu-card" onclick="openAdminSubSection('sub-admin-logistique')">
+                    <span class="menu-icon">📦</span>
+                    <h4>Stocks & Catalogue</h4>
+                    <p>Logs réapprovisionnements, ajouts, fiches & archives</p>
                 </div>
             </div>
 
-            <div class="card" id="section-focus-modification" style="border-left: 4px solid var(--primary-dark);">
-                <h3>Recherche Rapide & Mises à jour</h3>
-                <div class="form-group">
-                    <label for="adm-search">🔎 Taper le nom du médicament à gérer</label>
-                    <input type="text" id="adm-search" placeholder="Chercher dans le catalogue..." oninput="searchProduct(this.value, 'adm')">
-                    <div id="adm-search-results" class="search-results"></div>
+            <button id="btn-back-to-grid" class="btn-back-admin" onclick="closeAdminSubSection()" style="display: none;">⬅️ Retour au Menu Admin</button>
+
+
+            <div id="sub-admin-config" class="admin-section" style="display: none;">
+                <div class="card" style="border-left: 4px solid var(--primary-light);">
+                    <h3>🏢 Configuration Établissement</h3>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="pharmacy-name-input">Modifier le nom de la pharmacie :</label>
+                        <div style="display: flex; gap: 8px; margin-top: 5px;">
+                            <input type="text" id="pharmacy-name-input" placeholder="Ex: Pharmacie de l'Unité">
+                            <button onclick="sauvegarderNomPharmacie()" style="width: auto; margin-top: 0; padding: 0 20px; background-color: var(--primary-light);">Enregistrer</button>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="adm-focus-card" class="focused-product-card" style="display: none;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                        <h4 id="focus-nom" contenteditable="true" style="color: var(--primary-dark); font-size: 1.1rem; border-bottom: 1px dashed #cbd5e1;">-</h4>
-                        <span id="focus-badge" class="badge ok">Stock Ok</span>
+                <div class="card" style="border-left: 4px solid var(--accent-blue);">
+                    <h3>📅 Consultation Historique & Clôture</h3>
+                    <div class="form-group">
+                        <label for="filtre-date-admin">Choisir la date d'analyse :</label>
+                        <input type="date" id="filtre-date-admin" onchange="changerDateAnalyse(this.value)">
                     </div>
-                    
-                    <div style="font-size:0.85rem; background:white; padding:8px; border-radius:4px; margin-bottom:12px; border:1px solid #e2e8f0;">
-                        Disponible : <strong id="focus-stock" style="color:var(--primary-dark);">-</strong>
+                    <button class="btn-danger" style="margin-top:10px; font-size:0.9rem;" onclick="reinitialiserVentesCloud()">🚨 Réinitialiser toutes les ventes à 0</button>
+                </div>
+            </div>
+
+
+            <div id="sub-admin-finances" class="admin-section" style="display: none;">
+                <div class="kpi-container">
+                    <div class="kpi-card" style="border-left-color: var(--primary-dark);">
+                        <div class="kpi-title">Recettes du Jour</div>
+                        <div class="kpi-value" id="kpi-sales" style="color: var(--primary-dark);">0 Fc</div>
+                    </div>
+                    <div class="kpi-card" style="border-left-color: var(--accent-green);">
+                        <div class="kpi-title">Bénéfice Réel</div>
+                        <div class="kpi-value" style="color: var(--accent-green);" id="kpi-profit">0 Fc</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Journal des Ventes en direct</h3>
+                    <div id="admin-sales-log" style="max-height: 400px; overflow-y: auto; padding-right: 4px;"></div>
+                </div>
+            </div>
+
+
+            <div id="sub-admin-equipe" class="admin-section" style="display: none;">
+                <div class="card" style="border-left: 4px solid var(--accent-blue);">
+                    <h3>👥 Gestion de l'Équipe (Assistants)</h3>
+                    <div style="background:#F8FAFC; padding:10px; border-radius:6px; margin-bottom:15px;">
+                        <h5>Créer / Modifier un utilisateur</h5>
+                        <input type="hidden" id="user-id-edit">
+                        <div class="form-group" style="margin-top:8px;">
+                            <input type="text" id="user-name" placeholder="Nom de l'assistant">
+                        </div>
+                        <div class="form-row">
+                            <div class="password-wrapper" style="position: relative; flex: 1;">
+                                <input type="password" id="user-code" placeholder="Code secret (4 chiffres)" style="width: 100%; padding-right: 35px;">
+                                <span id="toggle-user-code" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; opacity: 0.6;">👁️</span>
+                            </div>
+                            
+                            <select id="user-role">
+                                <option value="assistant">Assistant</option>
+                                <option value="admin">Administrateur</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <button class="btn-accent" style="margin-top:0;" onclick="saveUserCloud()">Sauvegarder</button>
+                            <button class="btn-secondary" style="margin-top:0;" onclick="clearUserForm()">Annuler</button>
+                        </div>
+                    </div>
+                    <h5>Liste du Personnel</h5>
+                    <div id="admin-users-list" style="margin-top:8px;"></div>
+                </div>
+            </div>
+
+
+            <div id="sub-admin-logistique" class="admin-section" style="display: none;">
+                
+                <div class="card" id="admin-catalog-section">
+                    <h3>🗂️ Vue Catalogue & Rentabilité (A-Z)</h3>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <input type="text" id="filter-catalog-adm" placeholder="Filtrer le catalogue..." oninput="filtrerCatalogueTableau(this.value)">
+                    </div>
+                    <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Cliquez sur la ligne d'un médicament pour charger sa fiche technique ci-dessous.</p>
+                    <div class="table-responsive">
+                        <table class="table-products">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">N°</th>
+                                    <th>Médicament</th>
+                                    <th>Stock</th>
+                                    <th>P.U.A</th>
+                                    <th style="color:var(--accent-green);">P.A.Tot</th>
+                                    <th>P.V.U</th>
+                                    <th style="color:var(--accent-green);">P.V.Tot</th>
+                                    <th style="color:var(--accent-blue);">Évol Stock</th>
+                                    <th style="color:var(--accent-green);">Bénéf. J.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="catalog-table-body-adm"></tbody>
+                            <tfoot id="catalog-table-foot-adm"></tfoot>
+                        </table>
+                    </div>
+                    <div class="pagination-container">
+                        <button class="btn-secondary" id="btn-prev-adm" onclick="changerPage(-1)">◀ Précédent</button>
+                        <span id="page-indicator-adm" style="font-size:0.85rem; font-weight:bold;">Page 1</span>
+                        <button class="btn-secondary" id="btn-next-adm" onclick="changerPage(1)">Suivant ▶</button>
+                    </div>
+                </div>
+
+                <div class="card" id="section-focus-modification" style="border-left: 4px solid var(--primary-dark);">
+                    <h3>Recherche Rapide & Mises à jour</h3>
+                    <div class="form-group">
+                        <label for="adm-search">🔎 Taper le nom du médicament à gérer</label>
+                        <input type="text" id="adm-search" placeholder="Chercher dans le catalogue..." oninput="searchProduct(this.value, 'adm')">
+                        <div id="adm-search-results" class="search-results"></div>
                     </div>
 
-                    <h5 style="font-size:0.8rem; text-transform:uppercase; color:#64748b; margin-bottom:6px;">🛠️ Ajuster les prix (Francs Congolais)</h5>
+                    <div id="adm-focus-card" class="focused-product-card" style="display: none;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                            <h4 id="focus-nom" contenteditable="true" style="color: var(--primary-dark); font-size: 1.1rem; border-bottom: 1px dashed #CBD5E1;">-</h4>
+                            <span id="focus-badge" class="badge ok">Stock Ok</span>
+                        </div>
+                        
+                        <div style="font-size:0.85rem; background:white; padding:8px; border-radius:4px; margin-bottom:12px; border:1px solid #E2E8F0;">
+                            Disponible : <strong id="focus-stock" style="color:var(--primary-dark);">-</strong>
+                        </div>
+
+                        <h5 style="font-size:0.8rem; text-transform:uppercase; color:#64748b; margin-bottom:6px;">🛠️ Ajuster les prix (Francs Congolais)</h5>
+                        <div class="form-row">
+                            <div>
+                                <label style="font-size:0.75rem;">P.U.A (Achat)</label>
+                                <input type="number" step="any" id="focus-input-pua">
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem;">P.V.U (Vente)</label>
+                                <input type="number" step="any" id="focus-input-pvu">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top:10px;">
+                            <label style="font-size:0.8rem; font-weight:600; color:var(--text-dark);">Date d'expiration / Péremption</label>
+                            <input type="date" id="focus-input-peremption">
+                        </div>
+
+                        <h5 style="font-size:0.8rem; text-transform:uppercase; color:#A16207; margin-bottom:6px; margin-top:10px;">📦 Entrée de Stock (Réapprovisionnement)</h5>
+                        <div class="form-row" style="grid-template-columns: 2fr 1fr;">
+                            <input type="number" id="focus-input-reapp" min="0.01" step="any" placeholder="Quantité ajoutée">
+                            <button class="btn-secondary" style="padding:10px; margin-top:0;" onclick="applyReapp()">Ajouter</button>
+                        </div>
+
+                        <div class="form-row" style="margin-top: 15px;">
+                            <button class="btn-accent" style="margin-top:0;" onclick="modifierProduit()">💾 Enregistrer Modifs</button>
+                            <button class="btn-danger" style="margin-top:0;" onclick="archiverProduit()">📦 Archiver</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Ajouter un médicament au catalogue</h3>
+                    <div class="form-group">
+                        <label for="new-nom">Nom du médicament</label>
+                        <input type="text" id="new-nom" placeholder="Nom commercial / Forme">
+                    </div>
                     <div class="form-row">
                         <div>
-                            <label style="font-size:0.75rem;">P.U.A (Achat)</label>
-                            <input type="number" step="any" id="focus-input-pua">
+                            <label for="new-stock">Stock Initial</label>
+                            <input type="number" id="new-stock" min="0" step="any" value="0">
                         </div>
                         <div>
-                            <label style="font-size:0.75rem;">P.V.U (Vente)</label>
-                            <input type="number" step="any" id="focus-input-pvu">
+                            <label for="new-pua">Prix d'Achat (P.U.A)</label>
+                            <input type="number" id="new-pua" step="any" value="0">
                         </div>
                     </div>
-
-                    <div class="form-group" style="margin-top:10px;">
-                        <label style="font-size:0.8rem; font-weight:600; color:var(--text-dark);">Date d'expiration / Péremption</label>
-                        <input type="date" id="focus-input-peremption">
+                    <div class="form-group">
+                        <label for="new-pvu">Prix de Vente (P.V.U)</label>
+                        <input type="number" id="new-pvu" step="any" value="0">
                     </div>
-
-                    <h5 style="font-size:0.8rem; text-transform:uppercase; color:#a16207; margin-bottom:6px; margin-top:10px;">📦 Entrée de Stock (Réapprovisionnement)</h5>
-                    <div class="form-row" style="grid-template-columns: 2fr 1fr;">
-                        <input type="number" id="focus-input-reapp" min="0.01" step="any" placeholder="Quantité ajoutée">
-                        <button class="btn-secondary" style="padding:10px; margin-top:0;" onclick="applyReapp()">Ajouter</button>
+                    <div class="form-group" style="margin-bottom:15px;">
+                        <label for="new-peremption">Date d'expiration / Péremption</label>
+                        <input type="date" id="new-peremption">
                     </div>
+                    <button class="btn-accent" onclick="addNewProduct()">Créer le Produit</button>
+                </div>
 
-                    <div class="form-row" style="margin-top: 15px;">
-                        <button class="btn-accent" style="margin-top:0;" onclick="modifierProduit()">💾 Enregistrer Modifs</button>
-                        <button class="btn-danger" style="margin-top:0;" onclick="archiverProduit()">📦 Archiver</button>
+                <div class="card" style="border-left: 4px solid var(--warning);">
+                    <h3>📦 Historique des Réapprovisionnements</h3>
+                    <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Suivi précis des entrées de stocks par produit et auteur.</p>
+                    <div id="admin-reapp-log" style="max-height: 250px; overflow-y: auto;"></div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #64748b;">
+                    <h3>📦 Produits archivés</h3>
+                    <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
+                        <input type="text" id="filter-archives" placeholder="Rechercher un produit archivé..." oninput="renderArchives()">
                     </div>
+                    <div id="listeArchives" style="max-height: 280px; overflow-y: auto; padding-right: 4px;"></div>
                 </div>
             </div>
 
-            <div class="card">
-                <h3>Ajouter un médicament au catalogue</h3>
-                <div class="form-group">
-                    <label for="new-nom">Nom du médicament</label>
-                    <input type="text" id="new-nom" placeholder="Nom commercial / Forme">
-                </div>
-                <div class="form-row">
-                    <div>
-                        <label for="new-stock">Stock Initial</label>
-                        <input type="number" id="new-stock" min="0" step="any" value="0">
-                    </div>
-                    <div>
-                        <label for="new-pua">Prix d'Achat (P.U.A)</label>
-                        <input type="number" id="new-pua" step="any" value="0">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="new-pvu">Prix de Vente (P.V.U)</label>
-                    <input type="number" id="new-pvu" step="any" value="0">
-                </div>
-                <div class="form-group" style="margin-bottom:15px;">
-                    <label for="new-peremption">Date d'expiration / Péremption</label>
-                    <input type="date" id="new-peremption">
-                </div>
-                <button class="btn-accent" onclick="addNewProduct()">Créer le Produit</button>
-            </div>
-
-            <div class="card" style="border-left: 4px solid #64748b;">
-                <h3>📦 Produits archivés</h3>
-                <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
-                    <input type="text" id="filter-archives" placeholder="Rechercher un produit archivé..." oninput="renderArchives()">
-                </div>
-                <div id="listeArchives" style="max-height: 280px; overflow-y: auto; padding-right: 4px;"></div>
-            </div>
-
-            <div class="card">
-                <h3>Journal des Ventes en direct</h3>
-                <div id="admin-sales-log" style="max-height: 400px; overflow-y: auto; padding-right: 4px;"></div>
-            </div>
         </div>
 
     </div>
-
 
     <div class="nav-bottom" style="display:none;" id="navigation-bar">
         <div class="nav-item active" id="nav-assistant" onclick="switchScreen('assistant')">
@@ -615,7 +735,6 @@
             <div>Espace Admin</div>
         </div>
     </div>
-
 
     <script>
         const SUPABASE_URL = "https://ormkaxagjgfexdzhmvvf.supabase.co"; 
@@ -637,12 +756,36 @@
         const produitsParPage = 25; 
         let filtreTexteTableau = "";
 
+        // ----- FONCTIONS DE NAVIGATION DES SOUS-MENUS ADMIN (OPTION 1) -----
+        function openAdminSubSection(sectionId) {
+            // Masque la grille principale
+            document.getElementById('admin-main-menu-grid').style.display = 'none';
+            // Masque toutes les sections administratives
+            const sections = document.querySelectorAll('.admin-section');
+            sections.forEach(sec => sec.style.display = 'none');
+            
+            // Affiche la section demandée et le bouton retour
+            document.getElementById(sectionId).style.display = 'block';
+            document.getElementById('btn-back-to-grid').style.display = 'block';
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closeAdminSubSection() {
+            // Masque toutes les sections et le bouton retour
+            const sections = document.querySelectorAll('.admin-section');
+            sections.forEach(sec => sec.style.display = 'none');
+            document.getElementById('btn-back-to-grid').style.display = 'none';
+            
+            // Réaffiche la grille principale
+            document.getElementById('admin-main-menu-grid').style.display = 'grid';
+        }
+
         function nombre(valeur) {
             if (valeur === null || valeur === undefined) return 0;
             return parseFloat(valeur.toString().replace(",", ".")) || 0;
         }
 
-        // Calcule si le produit expire dans moins de 60 jours par rapport à la date d'analyse choisie
         function verifierPeremptionProche(datePeremption) {
             if (!datePeremption) return false;
             
@@ -699,7 +842,6 @@
         }
 
         function refreshUI() {
-            // On appelle la bonne fonction (renderBilanVentes) et on sécurise l'exécution
             try { renderBilanVentes(); } catch(e) { console.error(e); }
             try { renderAdminScreen(); } catch(e) { console.error(e); }
             try { renderUsersList(); } catch(e) { console.error(e); }
@@ -748,7 +890,6 @@
             switchScreen(utilisateurConnecte.role === 'admin' ? 'admin' : 'assistant');
             
             await chargerDonnees();
-            listenRealtime();
         }
 
         function logoutApp() {
@@ -787,7 +928,6 @@
             if(!nouvelleDate) return;
             recalculerFinancesGlobales();
             
-            // On force la reconstruction immédiate de l'écran sans changer d'onglet
             if (utilisateurConnecte) {
                 if (utilisateurConnecte.role === 'admin') {
                     renderAdminScreen();
@@ -866,7 +1006,7 @@
                 
                 alert("Utilisateur enregistré avec succès !");
                 clearUserForm();
-                await chargerDonnees(); // Va recharger et réafficher la liste proprement
+                await chargerDonnees();
             } catch (err) {
                 alert("Erreur réseau ou code secret doublon : " + err.message);
             }
@@ -922,8 +1062,6 @@
             listeUtilisateurs.forEach(u => {
                 const statusLabel = u.actif ? "🟢 Actif" : "🔴 Bloqué";
                 const btnStatusClass = u.actif ? "btn-secondary" : "btn-accent";
-                
-                // Masquage visuel du code secret dans la liste (ex: ****) pour la sécurité
                 const codeMasque = "****"; 
 
                 container.innerHTML += `
@@ -933,9 +1071,9 @@
                             <small style="color:#64748b;">Code: ${codeMasque} | Statut: ${statusLabel}</small>
                         </div>
                         <div style="display:flex; gap:4px;">
-                            <button onclick="editUserForm(${u.id}, '${u.nom.replace(/'/g, "\\'")}', '${u.code}', '${u.role}')" style="width:auto; padding:6px 10px; font-size:0.75rem; background:#2563eb; margin:0; color:white; border-radius:4px;">📝</button>
+                            <button onclick="editUserForm(${u.id}, '${u.nom.replace(/'/g, "\\'")}', '${u.code}', '${u.role}')" style="width:auto; padding:6px 10px; font-size:0.75rem; background:var(--accent-blue); margin:0; color:white; border-radius:4px;">📝</button>
                             <button onclick="toggleUserStatus(${u.id}, ${u.actif})" style="width:auto; padding:6px 10px; font-size:0.75rem; margin:0; border-radius:4px;" class="${btnStatusClass}">${u.actif ? 'Bloquer':'Activer'}</button>
-                            <button onclick="deleteUserCloud(${u.id})" style="width:auto; padding:6px 10px; font-size:0.75rem; background:#dc2626; margin:0; color:white; border-radius:4px;">🗑️</button>
+                            <button onclick="deleteUserCloud(${u.id})" style="width:auto; padding:6px 10px; font-size:0.75rem; background:var(--danger); margin:0; color:white; border-radius:4px;">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -943,40 +1081,37 @@
         }
 
         function renderReappLog() {
-    const container = document.getElementById("admin-reapp-log");
-    if(!container) return;
-    container.innerHTML = "";
+            const container = document.getElementById("admin-reapp-log");
+            if(!container) return;
+            container.innerHTML = "";
 
-    const dateCible = extraireDateCible(); // Exemple: "2026-06-29"
-    
-    // CONVERSION DU FORMAT: "2026-06-29" devient "29/06/2026"
-    const fragments = dateCible.split("-");
-    const dateFormateeFr = `${fragments[2]}/${fragments[1]}/${fragments[0]}`;
+            const dateCible = extraireDateCible(); 
+            const fragments = dateCible.split("-");
+            const dateFormateeFr = `${fragments[2]}/${fragments[1]}/${fragments[0]}`;
 
-    // Filtrage avec le format correspondant à votre base Supabase
-    const reapps = mouvementsStock.filter(m => m.type === "REAPPRO" && m.date && m.date.startsWith(dateFormateeFr));
-    
-    if(reapps.length === 0) {
-        container.innerHTML = `<p style="color:#718096; font-size:0.85rem; text-align:center;">Aucun réapprovisionnement enregistré pour cette date.</p>`;
-        return;
-    }
+            const reapps = mouvementsStock.filter(m => m.type === "REAPPRO" && m.date && m.date.startsWith(dateFormateeFr));
+            
+            if(reapps.length === 0) {
+                container.innerHTML = `<p style="color:#718096; font-size:0.85rem; text-align:center;">Aucun réapprovisionnement enregistré pour cette date.</p>`;
+                return;
+            }
 
-    reapps.forEach(r => {
-        container.innerHTML += `
-            <div class="list-item" style="font-size:0.85rem; background:#fffbeb; border-left:3px solid var(--warning); padding:8px; margin-bottom:5px;">
-                <div>
-                    🗃️ <strong>${r.produit}</strong> <br>
-                    <small style="color:#64748b;">Le ${r.date}</small> <br>
-                    Auteur : <strong style="color:var(--primary-dark);">${r.assistant}</strong>
-                </div>
-                <div style="text-align:right;">
-                    <span style="color:#b45309; font-weight:bold;">+ ${parseFloat(r.quantite)} u.</span> <br>
-                    <small style="color:#64748b;">Total: ${parseFloat(r.stock_apres)}</small>
-                </div>
-            </div>
-        `;
-    });
-}
+            reapps.forEach(r => {
+                container.innerHTML += `
+                    <div class="list-item" style="font-size:0.85rem; background:#fffbeb; border-left:3px solid var(--warning); padding:8px; margin-bottom:5px;">
+                        <div>
+                            🗃️ <strong>${r.produit}</strong> <br>
+                            <small style="color:#64748b;">Le ${r.date}</small> <br>
+                            Auteur : <strong style="color:var(--primary-dark);">${r.assistant}</strong>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="color:#b45309; font-weight:bold;">+ ${parseFloat(r.quantite)} u.</span> <br>
+                            <small style="color:#64748b;">Total: ${parseFloat(r.stock_apres)}</small>
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
         function filtrerCatalogueTableau(texte) {
             filtreTexteTableau = texte.toLowerCase().trim();
@@ -1010,11 +1145,23 @@
 
             let sommePua = 0;
             let sommePvu = 0;
+            let sommePuaTot = 0;
+            let sommePvuTot = 0;
+            let sommePvevo = 0;
             let sommeBeneficesJ = 0;
 
             listeFiltree.forEach(p => {
                 sommePua += nombre(p.pua || 0);
                 sommePvu += nombre(p.pvu || 0);
+                
+                const puatot = nombre(p.stock) * nombre(p.pua || 0);
+                const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
+                const pvevo = pvutot - puatot;
+
+                sommePuaTot += puatot;
+                sommePvuTot += pvutot;
+                sommePvevo += pvevo;
+
                 const benef = historiqueVentes
                     .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui)
                     .reduce((acc, v) => acc + nombre(v.profit || 0), 0);
@@ -1043,18 +1190,24 @@
                     .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui)
                     .reduce((acc, v) => acc + nombre(v.profit || 0), 0);
 
-                // Logique d'affichage dynamique en rouge selon la date d'expiration
+                const puatot = nombre(p.stock) * nombre(p.pua || 0);
+                const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
+                const pvevo = pvutot - puatot;
+
                 const estProchePeremption = verifierPeremptionProche(p.peremption);
-                const styleNom = estProchePeremption ? 'color: #dc2626; font-weight: bold;' : '';
+                const styleNom = estProchePeremption ? 'color: var(--danger); font-weight: bold;' : '';
                 const affichageDate = p.peremption ? `<br><small style="color:#718096; font-weight:normal;">Exp: ${p.peremption.split('-').reverse().join('/')}</small>` : '';
 
                 const trContent = `
                     <td style="color: #64748b; font-weight: bold;">${compteurLigne}</td>
                     <td><span style="${styleNom}">${p.nom}</span>${affichageDate}</td>
                     <td><span class="badge ${nombre(p.stock) <= 2 ? 'alert':'ok'}">${nombre(p.stock)}</span></td>
-                    <td style="color:#64748b; font-weight:500;">${nombre(p.pua || 0)} Fc</td>
-                    <td style="font-weight:600;">${nombre(p.pvu || 0)} Fc</td>
-                    <td style="color:#2E7D32; font-weight:bold; background:#f0fdf4;">${beneficeGeneres} Fc</td>
+                    <td style="color:var(--accent-blue); font-weight:500; background:var(--bg-blue-light);">${nombre(p.pua || 0)} Fc</td>
+                    <td style="color:var(--accent-green); font-weight:600; background:var(--bg-green-light);">${puatot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color:var(--accent-blue); font-weight:600; background:var(--bg-blue-light);">${nombre(p.pvu || 0)} Fc</td>
+                    <td style="color:var(--accent-green); font-weight:600; background:var(--bg-green-light);">${pvutot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color:var(--accent-blue); font-weight:bold; background:var(--bg-blue-evo);">${pvevo.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color:var(--accent-green); font-weight:bold; background:var(--bg-green-light);">${beneficeGeneres} Fc</td>
                 `;
 
                 if (tbodyAst) {
@@ -1065,6 +1218,7 @@
                         tr.style.cursor = "pointer";
                         tr.onclick = () => {
                             switchScreen('admin');
+                            openAdminSubSection('sub-admin-logistique');
                             selectProduct(p.id, 'adm');
                             document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' });
                         };
@@ -1090,16 +1244,19 @@
                 <tr class="total-row">
                     <td colspan="2">TOTAL</td>
                     <td>-</td>
-                    <td>${sommePua.toFixed(2)} Fc</td>
-                    <td>${sommePvu.toFixed(2)} Fc</td>
-                    <td style="color:#1b5e20; background:#c8e6c9;">${sommeBeneficesJ.toFixed(2)} Fc</td>
+                    <td style="color:var(--accent-blue); background:var(--bg-blue-light);">${sommePua.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color:var(--accent-green); background:var(--bg-green-light);">${sommePuaTot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color:var(--accent-blue); background:var(--bg-blue-light);">${sommePvu.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color:var(--accent-green); background:var(--bg-green-light);">${sommePvuTot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color:var(--accent-blue); background:var(--bg-blue-evo);">${sommePvevo.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color:var(--accent-green); background:var(--bg-green-light);">${sommeBeneficesJ.toFixed(2).replace('.00', '')} Fc</td>
                 </tr>
             `;
             if (tfootAst && produitsAafficher.length > 0) tfootAst.innerHTML = footContent;
             if (tfootAdm && produitsAafficher.length > 0) tfootAdm.innerHTML = footContent;
 
             if (produitsAafficher.length === 0) {
-                const trVide = `<tr><td colspan="6" style="text-align:center; color:#718096; padding:20px;">Aucun produit trouvé</td></tr>`;
+                const trVide = `<tr><td colspan="9" style="text-align:center; color:#718096; padding:20px;">Aucun produit trouvé</td></tr>`;
                 if(tbodyAst) tbodyAst.innerHTML = trVide;
                 if(tbodyAdm) tbodyAdm.innerHTML = trVide;
             }
@@ -1121,7 +1278,7 @@
             resultsDiv.innerHTML = '';
             filtered.forEach(p => {
                 const row = document.createElement('div');
-                const badgeAlert = verifierPeremptionProche(p.peremption) ? 'color: #dc2626; font-weight:bold;' : '';
+                const badgeAlert = verifierPeremptionProche(p.peremption) ? 'color: var(--danger); font-weight:bold;' : '';
                 row.innerHTML = `<span style="${badgeAlert}">${p.nom}</span> (Stock: ${nombre(p.stock)})`;
                 row.onclick = () => selectProduct(p.id, mode);
                 resultsDiv.appendChild(row);
@@ -1140,9 +1297,8 @@
                 document.getElementById('ast-selected-area').style.display = 'block';
                 document.getElementById('ast-selected-name').innerText = produit.nom;
                 
-                // Alerte visuelle textuelle aussi lors de l'enregistrement de la vente
                 if (verifierPeremptionProche(produit.peremption)) {
-                    document.getElementById('ast-selected-name').style.color = '#dc2626';
+                    document.getElementById('ast-selected-name').style.color = 'var(--danger)';
                 } else {
                     document.getElementById('ast-selected-name').style.color = 'var(--primary-dark)';
                 }
@@ -1165,11 +1321,10 @@
 
             const badge = document.getElementById('focus-badge');
             
-            // Priorité au badge d'alerte si le produit expire bientôt
             if (verifierPeremptionProche(produit.peremption)) {
                 badge.innerText = "Péremption proche !";
                 badge.className = "badge alert";
-                document.getElementById('focus-nom').style.color = '#dc2626';
+                document.getElementById('focus-nom').style.color = 'var(--danger)';
             } else if (nombre(produit.stock) <= 2) {
                 badge.innerText = "Réappro nécessaire";
                 badge.className = "badge alert";
@@ -1191,7 +1346,7 @@
 
             const idVente = "V" + Date.now().toString().slice(-6);
             const avant = nombre(produit.stock);
-            const apres = nombre((avant - qty).toFixed(2)); // Prévention contre les bugs décimaux JS
+            const apres = nombre((avant - qty).toFixed(2)); 
 
             await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
 
@@ -1252,12 +1407,12 @@
 
             if (isNaN(qty) || qty <= 0) return;
             const avant = nombre(produit.stock);
-            const apres = nombre((avant + qty).toFixed(2)); // Correction pour éviter les résidus binaires JS (ex: 10.5000001)
+            const apres = nombre((avant + qty).toFixed(2)); 
 
             await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
             await enregistrerMouvementCloud("REAPPRO", produit, qty, avant, apres, "Réappro Cloud");
             
-            document.getElementById('focus-input-reapp').value = ''; // Vider le champ après succès
+            document.getElementById('focus-input-reapp').value = ''; 
             alert(`Réapprovisionnement de ${qty} pour "${produit.nom}" validé !`);
             await chargerDonnees();
         }
@@ -1294,7 +1449,6 @@
                 const nPeremption = document.getElementById("focus-input-peremption").value;
 
                 try {
-                    // Envoi des modifications sur le Cloud
                     const { error } = await dbCloud.from('inventaire').update({
                         nom: nNom,
                         pua: nPua,
@@ -1348,7 +1502,7 @@
                     }
                     
                     const estProchePeremption = verifierPeremptionProche(p.peremption);
-                    const styleNom = estProchePeremption ? 'color: #dc2626; font-weight: bold;' : '';
+                    const styleNom = estProchePeremption ? 'color: var(--danger); font-weight: bold;' : '';
                     
                     aDesVentes = true;
                     div.innerHTML += `
@@ -1426,7 +1580,7 @@
                 div.innerHTML += `
                     <div class="list-item" style="font-size:0.85rem; background:#f8fafc; padding:10px; margin-bottom:6px; border-radius:6px; border: 1px solid #e2e8f0;">
                         <div><strong>${p.nom}</strong></div>
-                        <button class="btn-secondary" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0; background:#475569;" onclick="restaurerProduit(${p.id})">Restaurer</button>
+                        <button class="btn-secondary" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;" onclick="restaurerProduit(${p.id})">Restaurer</button>
                     </div>
                 `;
             });
@@ -1451,8 +1605,8 @@
             } else {
                 log.innerHTML = '';
                 ventesFiltrées.forEach(v => {
-                    const statusBadge = v.statut === "VALIDE" ? '<span style="color:green;font-weight:bold;">✔ Valide</span>' : '<span style="color:red;font-weight:bold;">✖ Annulée</span>';
-                    const cancelBtn = v.statut === "VALIDE" ? `<button style="margin-top:8px; background:#dc2626; padding:6px; font-size:12px; width:auto;" onclick="annulerVente('${v.id}')">Annuler</button>` : '';
+                    const statusBadge = v.statut === "VALIDE" ? '<span style="color:#10b981;font-weight:bold;">✔ Valide</span>' : '<span style="color:#ef4444;font-weight:bold;">✖ Annulée</span>';
+                    const cancelBtn = v.statut === "VALIDE" ? `<button style="margin-top:8px; background:var(--danger); padding:6px; font-size:12px; width:auto;" onclick="annulerVente('${v.id}')">Annuler</button>` : '';
 
                     log.innerHTML += `
                         <div class="list-item" style="font-size:0.85rem; background:#f8fafc; padding:8px; margin-bottom:4px; border-radius:4px;">
@@ -1503,9 +1657,14 @@
                 document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
                 renderMouvements();
             } else {
+                // ESPACE ADMIN PRINCIPAL
                 if (screenAdm) { screenAdm.style.display = 'block'; screenAdm.classList.add('active'); }
                 document.getElementById('tab-admin-nav').classList.add('active');
                 document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
+                
+                // UX : Quand on clique sur l'onglet Admin, on réinitialise toujours sur la grille principale de l'Espace Admin
+                closeAdminSubSection();
+                
                 renderAdminScreen();
                 renderAlphabeticalCatalog();
             }
@@ -1546,39 +1705,35 @@
                     switchScreen(utilisateurConnecte.role === 'admin' ? 'admin' : 'assistant');
                     
                     await chargerDonnees();
-                    listenRealtime();
                 } catch(e) {
                     console.error("Échec de restauration de session", e);
                 }
             }
         };
+
         document.addEventListener("DOMContentLoaded", function() {
-    const toggleUserCode = document.getElementById("toggle-user-code");
-    const userCodeInput = document.getElementById("user-code");
+            const toggleUserCode = document.getElementById("toggle-user-code");
+            const userCodeInput = document.getElementById("user-code");
 
-    if (toggleUserCode && userCodeInput) {
-        toggleUserCode.addEventListener("click", function () {
-            // On vérifie le type actuel et on l'inverse
-            const isPassword = userCodeInput.getAttribute("type") === "password";
-            userCodeInput.setAttribute("type", isPassword ? "text" : "password");
-            
-            // On change l'icône selon l'état
-            this.textContent = isPassword ? "🙈" : "👁️";
+            if (toggleUserCode && userCodeInput) {
+                toggleUserCode.addEventListener("click", function () {
+                    const isPassword = userCodeInput.getAttribute("type") === "password";
+                    userCodeInput.setAttribute("type", isPassword ? "text" : "password");
+                    this.textContent = isPassword ? "🙈" : "👁️";
+                });
+            }
         });
-    }
-});
 
-// IMPORTANT : Pense à reset le champ en mode 'password' quand tu réinitialises le formulaire !
-const originalClearUserForm = clearUserForm;
-clearUserForm = function() {
-    if (originalClearUserForm) originalClearUserForm();
-    const userCodeInput = document.getElementById("user-code");
-    const toggleUserCode = document.getElementById("toggle-user-code");
-    if (userCodeInput && toggleUserCode) {
-        userCodeInput.setAttribute("type", "password");
-        toggleUserCode.textContent = "👁️";
-    }
-};
+        const originalClearUserForm = clearUserForm;
+        clearUserForm = function() {
+            if (originalClearUserForm) originalClearUserForm();
+            const userCodeInput = document.getElementById("user-code");
+            const toggleUserCode = document.getElementById("toggle-user-code");
+            if (userCodeInput && toggleUserCode) {
+                userCodeInput.setAttribute("type", "password");
+                toggleUserCode.textContent = "👁️";
+            }
+        };
     </script>
 </body>
 </html>
