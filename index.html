@@ -1126,141 +1126,133 @@
         }
 
         function renderAlphabeticalCatalog() {
-            const tbodyAst = document.getElementById("catalog-table-body-ast");
-            const tbodyAdm = document.getElementById("catalog-table-body-adm");
-            const tfootAst = document.getElementById("catalog-table-foot-ast");
-            const tfootAdm = document.getElementById("catalog-table-foot-adm");
-            
-            if (tbodyAst) tbodyAst.innerHTML = "";
-            if (tbodyAdm) tbodyAdm.innerHTML = "";
-            if (tfootAst) tfootAst.innerHTML = "";
-            if (tfootAdm) tfootAdm.innerHTML = "";
+    const tbodyAst = document.getElementById("catalog-table-body-ast");
+    const tbodyAdm = document.getElementById("catalog-table-body-adm");
+    const tfootAst = document.getElementById("catalog-table-foot-ast");
+    const tfootAdm = document.getElementById("catalog-table-foot-adm");
+    
+    if (tbodyAst) tbodyAst.innerHTML = "";
+    if (tbodyAdm) tbodyAdm.innerHTML = "";
+    if (tfootAst) tfootAst.innerHTML = "";
+    if (tfootAdm) tfootAdm.innerHTML = "";
 
-            let listeFiltree = inventaire.filter(p => p.actif !== false);
-            if (filtreTexteTableau !== "") {
-                listeFiltree = listeFiltree.filter(p => p.nom.toLowerCase().includes(filtreTexteTableau));
+    let listeFiltree = inventaire.filter(p => p.actif !== false);
+    if (filtreTexteTableau !== "") {
+        listeFiltree = listeFiltree.filter(p => p.nom.toLowerCase().includes(filtreTexteTableau));
+    }
+
+    const dateAujourdhui = extraireDateCible();
+
+    let sommePua = 0;
+    let sommePvu = 0;
+    let sommePuaTot = 0;
+    let sommePvuTot = 0;
+    let sommePvevo = 0;
+    let sommeBeneficesJ = 0;
+
+    // Calcul des totaux
+    listeFiltree.forEach(p => {
+        sommePua += nombre(p.pua || 0);
+        sommePvu += nombre(p.pvu || 0);
+        
+        const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui);
+        const qteVendue = ventesDuJour.reduce((acc, v) => acc + nombre(v.quantite || 0), 0);
+        
+        const puatot = nombre(p.stock) * nombre(p.pua || 0);
+        const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
+        
+        // Logique demandée : Évol Stock = Quantité vendue * P.V.U
+        const pvevo = qteVendue * nombre(p.pvu || 0);
+
+        sommePuaTot += puatot;
+        sommePvuTot += pvutot;
+        sommePvevo += pvevo;
+
+        const benef = ventesDuJour.reduce((acc, v) => acc + nombre(v.profit || 0), 0);
+        sommeBeneficesJ += benef;
+    });
+
+    const indexDebut = pageActuelle * produitsParPage;
+    const indexFin = indexDebut + produitsParPage;
+    const produitsAafficher = listeFiltree.slice(indexDebut, indexFin);
+
+    // Pagination et UI
+    const totalPages = Math.ceil(listeFiltree.length / produitsParPage) || 1;
+    const txtPage = `Page ${pageActuelle + 1} / ${totalPages}`;
+    if(document.getElementById("page-indicator-ast")) document.getElementById("page-indicator-ast").innerText = txtPage;
+    if(document.getElementById("page-indicator-adm")) document.getElementById("page-indicator-adm").innerText = txtPage;
+
+    let compteurLigne = indexDebut + 1;
+
+    produitsAafficher.forEach(p => {
+        const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui);
+        const qteVendue = ventesDuJour.reduce((acc, v) => acc + nombre(v.quantite || 0), 0);
+        const beneficeGeneres = ventesDuJour.reduce((acc, v) => acc + nombre(v.profit || 0), 0);
+
+        const puatot = nombre(p.stock) * nombre(p.pua || 0);
+        const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
+        
+        // Calcul appliqué ici
+        const pvevo = qteVendue * nombre(p.pvu || 0);
+
+        const estProchePeremption = verifierPeremptionProche(p.peremption);
+        const styleNom = estProchePeremption ? 'color: #e53e3e; font-weight: bold;' : '';
+        const affichageDate = p.peremption ? `<br><small style="color:#718096; font-weight:normal;">Exp: ${p.peremption.split('-').reverse().join('/')}</small>` : '';
+
+        const trContent = `
+            <td style="color: #64748b; font-weight: bold;">${compteurLigne}</td>
+            <td><span style="${styleNom}">${p.nom}</span>${affichageDate}</td>
+            <td><span class="badge ${nombre(p.stock) <= 2 ? 'alert':'ok'}">${nombre(p.stock)}</span></td>
+            <td style="color: #3182ce; font-weight:500; background: #ebf8ff;">${nombre(p.pua || 0)} Fc</td>
+            <td style="color: #38a169; font-weight:600; background: #f0fff4;">${puatot.toFixed(2).replace('.00', '')} Fc</td>
+            <td style="color: #3182ce; font-weight:600; background: #ebf8ff;">${nombre(p.pvu || 0)} Fc</td>
+            <td style="color: #38a169; font-weight:600; background: #f0fff4;">${pvutot.toFixed(2).replace('.00', '')} Fc</td>
+            <td style="color: #3182ce; font-weight:bold; background: #e2e8f0;">
+                ${pvevo.toFixed(2).replace('.00', '')} Fc
+                <br><small style="color:#64748b; font-weight:normal;">(${qteVendue} vendus)</small>
+            </td>
+            <td style="color: #38a169; font-weight:bold; background: #f0fff4;">${beneficeGeneres} Fc</td>
+        `;
+
+        if (tbodyAst) {
+            const tr = document.createElement("tr");
+            tr.className = "clickable-row";
+            tr.innerHTML = trContent;
+            if (utilisateurConnecte && utilisateurConnecte.role === 'admin') {
+                tr.style.cursor = "pointer";
+                tr.onclick = () => { switchScreen('admin'); openAdminSubSection('sub-admin-logistique'); selectProduct(p.id, 'adm'); document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' }); };
             }
-
-            const dateAujourdhui = extraireDateCible();
-
-            let sommePua = 0;
-            let sommePvu = 0;
-            let sommePuaTot = 0;
-            let sommePvuTot = 0;
-            let sommePvevo = 0;
-            let sommeBeneficesJ = 0;
-
-            listeFiltree.forEach(p => {
-                sommePua += nombre(p.pua || 0);
-                sommePvu += nombre(p.pvu || 0);
-                
-                const puatot = nombre(p.stock) * nombre(p.pua || 0);
-                const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
-                const pvevo = pvutot - puatot;
-
-                sommePuaTot += puatot;
-                sommePvuTot += pvutot;
-                sommePvevo += pvevo;
-
-                const benef = historiqueVentes
-                    .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui)
-                    .reduce((acc, v) => acc + nombre(v.profit || 0), 0);
-                sommeBeneficesJ += benef;
-            });
-
-            const indexDebut = pageActuelle * produitsParPage;
-            const indexFin = indexDebut + produitsParPage;
-            const produitsAafficher = listeFiltree.slice(indexDebut, indexFin);
-
-            const totalPages = Math.ceil(listeFiltree.length / produitsParPage) || 1;
-            const txtPage = `Page ${pageActuelle + 1} / ${totalPages}`;
-            
-            if(document.getElementById("page-indicator-ast")) document.getElementById("page-indicator-ast").innerText = txtPage;
-            if(document.getElementById("page-indicator-adm")) document.getElementById("page-indicator-adm").innerText = txtPage;
-
-            if(document.getElementById("btn-prev-ast")) document.getElementById("btn-prev-ast").disabled = (pageActuelle === 0);
-            if(document.getElementById("btn-prev-adm")) document.getElementById("btn-prev-adm").disabled = (pageActuelle === 0);
-            if(document.getElementById("btn-next-ast")) document.getElementById("btn-next-ast").disabled = (indexFin >= listeFiltree.length);
-            if(document.getElementById("btn-next-adm")) document.getElementById("btn-next-adm").disabled = (indexFin >= listeFiltree.length);
-
-            let compteurLigne = indexDebut + 1;
-
-            produitsAafficher.forEach(p => {
-                const beneficeGeneres = historiqueVentes
-                    .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui)
-                    .reduce((acc, v) => acc + nombre(v.profit || 0), 0);
-
-                const puatot = nombre(p.stock) * nombre(p.pua || 0);
-                const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
-                const pvevo = pvutot - puatot;
-
-                const estProchePeremption = verifierPeremptionProche(p.peremption);
-                const styleNom = estProchePeremption ? 'color: var(--danger); font-weight: bold;' : '';
-                const affichageDate = p.peremption ? `<br><small style="color:#718096; font-weight:normal;">Exp: ${p.peremption.split('-').reverse().join('/')}</small>` : '';
-
-                const trContent = `
-                    <td style="color: #64748b; font-weight: bold;">${compteurLigne}</td>
-                    <td><span style="${styleNom}">${p.nom}</span>${affichageDate}</td>
-                    <td><span class="badge ${nombre(p.stock) <= 2 ? 'alert':'ok'}">${nombre(p.stock)}</span></td>
-                    <td style="color:var(--accent-blue); font-weight:500; background:var(--bg-blue-light);">${nombre(p.pua || 0)} Fc</td>
-                    <td style="color:var(--accent-green); font-weight:600; background:var(--bg-green-light);">${puatot.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color:var(--accent-blue); font-weight:600; background:var(--bg-blue-light);">${nombre(p.pvu || 0)} Fc</td>
-                    <td style="color:var(--accent-green); font-weight:600; background:var(--bg-green-light);">${pvutot.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color:var(--accent-blue); font-weight:bold; background:var(--bg-blue-evo);">${pvevo.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color:var(--accent-green); font-weight:bold; background:var(--bg-green-light);">${beneficeGeneres} Fc</td>
-                `;
-
-                if (tbodyAst) {
-                    const tr = document.createElement("tr");
-                    tr.className = "clickable-row";
-                    tr.innerHTML = trContent;
-                    if (utilisateurConnecte && utilisateurConnecte.role === 'admin') {
-                        tr.style.cursor = "pointer";
-                        tr.onclick = () => {
-                            switchScreen('admin');
-                            openAdminSubSection('sub-admin-logistique');
-                            selectProduct(p.id, 'adm');
-                            document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' });
-                        };
-                    }
-                    tbodyAst.appendChild(tr);
-                }
-
-                if (tbodyAdm) {
-                    const tr = document.createElement("tr");
-                    tr.className = "clickable-row";
-                    tr.style.cursor = "pointer";
-                    tr.innerHTML = trContent;
-                    tr.onclick = () => {
-                        selectProduct(p.id, 'adm');
-                        document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' });
-                    };
-                    tbodyAdm.appendChild(tr);
-                }
-                compteurLigne++;
-            });
-
-            const footContent = `
-                <tr class="total-row">
-                    <td colspan="2">TOTAL</td>
-                    <td>-</td>
-                    <td style="color:var(--accent-blue); background:var(--bg-blue-light);">${sommePua.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color:var(--accent-green); background:var(--bg-green-light);">${sommePuaTot.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color:var(--accent-blue); background:var(--bg-blue-light);">${sommePvu.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color:var(--accent-green); background:var(--bg-green-light);">${sommePvuTot.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color:var(--accent-blue); background:var(--bg-blue-evo);">${sommePvevo.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color:var(--accent-green); background:var(--bg-green-light);">${sommeBeneficesJ.toFixed(2).replace('.00', '')} Fc</td>
-                </tr>
-            `;
-            if (tfootAst && produitsAafficher.length > 0) tfootAst.innerHTML = footContent;
-            if (tfootAdm && produitsAafficher.length > 0) tfootAdm.innerHTML = footContent;
-
-            if (produitsAafficher.length === 0) {
-                const trVide = `<tr><td colspan="9" style="text-align:center; color:#718096; padding:20px;">Aucun produit trouvé</td></tr>`;
-                if(tbodyAst) tbodyAst.innerHTML = trVide;
-                if(tbodyAdm) tbodyAdm.innerHTML = trVide;
-            }
+            tbodyAst.appendChild(tr);
         }
+
+        if (tbodyAdm) {
+            const tr = document.createElement("tr");
+            tr.className = "clickable-row";
+            tr.style.cursor = "pointer";
+            tr.innerHTML = trContent;
+            tr.onclick = () => { selectProduct(p.id, 'adm'); document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' }); };
+            tbodyAdm.appendChild(tr);
+        }
+        compteurLigne++;
+    });
+
+    const footContent = `
+        <tr class="total-row">
+            <td colspan="2">TOTAL</td>
+            <td>-</td>
+            <td style="color: #3182ce; background: #ebf8ff;">${sommePua.toFixed(2).replace('.00', '')} Fc</td>
+            <td style="color: #38a169; background: #f0fff4;">${sommePuaTot.toFixed(2).replace('.00', '')} Fc</td>
+            <td style="color: #3182ce; background: #ebf8ff;">${sommePvu.toFixed(2).replace('.00', '')} Fc</td>
+            <td style="color: #38a169; background: #f0fff4;">${sommePvuTot.toFixed(2).replace('.00', '')} Fc</td>
+            <td style="color: #3182ce; background: #e2e8f0;">${sommePvevo.toFixed(2).replace('.00', '')} Fc</td>
+            <td style="color: #38a169; background: #f0fff4;">${sommeBeneficesJ.toFixed(2).replace('.00', '')} Fc</td>
+        </tr>
+    `;
+    if (tfootAst && produitsAafficher.length > 0) tfootAst.innerHTML = footContent;
+    if (tfootAdm && produitsAafficher.length > 0) tfootAdm.innerHTML = footContent;
+}
+
+
 
         function searchProduct(query, mode) {
             const resultsDiv = document.getElementById(`${mode}-search-results`);
