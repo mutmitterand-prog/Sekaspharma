@@ -460,6 +460,7 @@
                                 <th style="color:var(--accent-green);">P.V.Tot</th>
                                 <th style="color:var(--accent-blue);">Évol Stock</th>
                                 <th style="color:var(--accent-green);">Bénéf. J.</th>
+                                <th style="color:var(--primary-dark);">Contrôle</th> <!-- Nouvelle colonne Assistant -->
                             </tr>
                         </thead>
                         <tbody id="catalog-table-body-ast"></tbody>
@@ -614,6 +615,7 @@
                                     <th style="color:var(--accent-green);">P.V.Tot</th>
                                     <th style="color:var(--accent-blue);">Évol Stock</th>
                                     <th style="color:var(--accent-green);">Bénéf. J.</th>
+                                    <th style="color:var(--primary-dark);">Contrôle</th> <!-- Nouvelle colonne Admin -->
                                 </tr>
                             </thead>
                             <tbody id="catalog-table-body-adm"></tbody>
@@ -758,13 +760,10 @@
 
         // ----- FONCTIONS DE NAVIGATION DES SOUS-MENUS ADMIN (OPTION 1) -----
         function openAdminSubSection(sectionId) {
-            // Masque la grille principale
             document.getElementById('admin-main-menu-grid').style.display = 'none';
-            // Masque toutes les sections administratives
             const sections = document.querySelectorAll('.admin-section');
             sections.forEach(sec => sec.style.display = 'none');
             
-            // Affiche la section demandée et le bouton retour
             document.getElementById(sectionId).style.display = 'block';
             document.getElementById('btn-back-to-grid').style.display = 'block';
             
@@ -772,12 +771,10 @@
         }
 
         function closeAdminSubSection() {
-            // Masque toutes les sections et le bouton retour
             const sections = document.querySelectorAll('.admin-section');
             sections.forEach(sec => sec.style.display = 'none');
             document.getElementById('btn-back-to-grid').style.display = 'none';
             
-            // Réaffiche la grille principale
             document.getElementById('admin-main-menu-grid').style.display = 'grid';
         }
 
@@ -1126,132 +1123,207 @@
         }
 
         function renderAlphabeticalCatalog() {
-    const tbodyAst = document.getElementById("catalog-table-body-ast");
-    const tbodyAdm = document.getElementById("catalog-table-body-adm");
-    const tfootAst = document.getElementById("catalog-table-foot-ast");
-    const tfootAdm = document.getElementById("catalog-table-foot-adm");
-    
-    if (tbodyAst) tbodyAst.innerHTML = "";
-    if (tbodyAdm) tbodyAdm.innerHTML = "";
-    if (tfootAst) tfootAst.innerHTML = "";
-    if (tfootAdm) tfootAdm.innerHTML = "";
+            const tbodyAst = document.getElementById("catalog-table-body-ast");
+            const tbodyAdm = document.getElementById("catalog-table-body-adm");
+            const tfootAst = document.getElementById("catalog-table-foot-ast");
+            const tfootAdm = document.getElementById("catalog-table-foot-adm");
+            
+            if (tbodyAst) tbodyAst.innerHTML = "";
+            if (tbodyAdm) tbodyAdm.innerHTML = "";
+            if (tfootAst) tfootAst.innerHTML = "";
+            if (tfootAdm) tfootAdm.innerHTML = "";
 
-    let listeFiltree = inventaire.filter(p => p.actif !== false);
-    if (filtreTexteTableau !== "") {
-        listeFiltree = listeFiltree.filter(p => p.nom.toLowerCase().includes(filtreTexteTableau));
+            let listeFiltree = inventaire.filter(p => p.actif !== false);
+            if (filtreTexteTableau !== "") {
+                listeFiltree = listeFiltree.filter(p => p.nom.toLowerCase().includes(filtreTexteTableau));
+            }
+
+            const dateAujourdhui = extraireDateCible();
+
+            let sommePua = 0;
+            let sommePvu = 0;
+            let sommePuaTot = 0;
+            let sommePvuTot = 0;
+            let sommePvevo = 0;
+            let sommeBeneficesJ = 0;
+
+            listeFiltree.forEach(p => {
+                sommePua += nombre(p.pua || 0);
+                sommePvu += nombre(p.pvu || 0);
+                
+                const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui);
+                const qteVendue = ventesDuJour.reduce((acc, v) => acc + nombre(v.quantite || 0), 0);
+                
+                const puatot = nombre(p.stock) * nombre(p.pua || 0);
+                const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
+                const pvevo = qteVendue * nombre(p.pvu || 0);
+
+                sommePuaTot += puatot;
+                sommePvuTot += pvutot;
+                sommePvevo += pvevo;
+
+                const benef = ventesDuJour.reduce((acc, v) => acc + nombre(v.profit || 0), 0);
+                sommeBeneficesJ += benef;
+            });
+
+            const indexDebut = pageActuelle * produitsParPage;
+            const indexFin = indexDebut + produitsParPage;
+            const produitsAafficher = listeFiltree.slice(indexDebut, indexFin);
+
+            const totalPages = Math.ceil(listeFiltree.length / produitsParPage) || 1;
+            const txtPage = `Page ${pageActuelle + 1} / ${totalPages}`;
+            if(document.getElementById("page-indicator-ast")) document.getElementById("page-indicator-ast").innerText = txtPage;
+            if(document.getElementById("page-indicator-adm")) document.getElementById("page-indicator-adm").innerText = txtPage;
+
+            let compteurLigne = indexDebut + 1;
+
+            produitsAafficher.forEach(p => {
+                const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui);
+                const qteVendue = ventesDuJour.reduce((acc, v) => acc + nombre(v.quantite || 0), 0);
+                const beneficeGeneres = ventesDuJour.reduce((acc, v) => acc + nombre(v.profit || 0), 0);
+
+                const puatot = nombre(p.stock) * nombre(p.pua || 0);
+                const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
+                const pvevo = qteVendue * nombre(p.pvu || 0);
+
+                const estProchePeremption = verifierPeremptionProche(p.peremption);
+                const styleNom = estProchePeremption ? 'color: #e53e3e; font-weight: bold;' : '';
+                const affichageDate = p.peremption ? `<br><small style="color:#718096; font-weight:normal;">Exp: ${p.peremption.split('-').reverse().join('/')}</small>` : '';
+
+                // ---- LOGIQUE DU BADGE DE CONTRÔLE ----
+                let badgeControle = `<span style="color:#64748b;">-</span>`;
+                if (p.dernier_controle) {
+                    const dateDernier = new Date(p.dernier_controle);
+                    const dateRef = new Date(dateAujourdhui);
+                    const diffTemps = dateRef.getTime() - dateDernier.getTime();
+                    const diffJours = Math.floor(diffTemps / (1000 * 3600 * 24));
+                    const joursRestants = 14 - diffJours;
+
+                    if (joursRestants <= 0) {
+                        badgeControle = `<span class="badge alert" style="background:#FEE2E2; color:#A61C1C; padding:6px 10px;">🔴 À faire</span>`;
+                    } else {
+                        badgeControle = `<span class="badge ok" style="background:#D1FAE5; color:#065F46; padding:6px 10px;">🟢 J-${joursRestants}</span>`;
+                    }
+                } else {
+                    badgeControle = `<span class="badge" style="background:#E2E8F0; color:#4A5568; padding:6px 10px;">🔴 Non contrôlé</span>`;
+                }
+
+                // Cellule dynamique avec structure cliquable conditionnelle (Admin ou Assistant simple)
+                let celluleControle = `<td>${badgeControle}</td>`;
+                if (utilisateurConnecte && utilisateurConnecte.role === 'admin') {
+                    celluleControle = `<td><button onclick="lancerControleInventaire(${p.id}); event.stopPropagation();" style="width:auto; margin:0; padding:4px 8px; font-size:0.8rem; background:none; border:none; cursor:pointer;">${badgeControle}</button></td>`;
+                }
+                // --------------------------------------
+
+                const trContent = `
+                    <td style="color: #64748b; font-weight: bold;">${compteurLigne}</td>
+                    <td><span style="${styleNom}">${p.nom}</span>${affichageDate}</td>
+                    <td><span class="badge ${nombre(p.stock) <= 2 ? 'alert':'ok'}">${nombre(p.stock)}</span></td>
+                    <td style="color: #3182ce; font-weight:500; background: #ebf8ff;">${nombre(p.pua || 0)} Fc</td>
+                    <td style="color: #38a169; font-weight:600; background: #f0fff4;">${puatot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #3182ce; font-weight:600; background: #ebf8ff;">${nombre(p.pvu || 0)} Fc</td>
+                    <td style="color: #38a169; font-weight:600; background: #f0fff4;">${pvutot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #3182ce; font-weight:bold; background: #e2e8f0;">
+                        ${pvevo.toFixed(2).replace('.00', '')} Fc
+                        <br><small style="color:#64748b; font-weight:normal;">(${qteVendue} vendus)</small>
+                    </td>
+                    <td style="color: #38a169; font-weight:bold; background: #f0fff4;">${beneficeGeneres} Fc</td>
+                    ${celluleControle} <!-- Injection de la cellule de contrôle -->
+                `;
+
+                if (tbodyAst) {
+                    const tr = document.createElement("tr");
+                    tr.className = "clickable-row";
+                    tr.innerHTML = trContent;
+                    if (utilisateurConnecte && utilisateurConnecte.role === 'admin') {
+                        tr.style.cursor = "pointer";
+                        tr.onclick = () => { switchScreen('admin'); openAdminSubSection('sub-admin-logistique'); selectProduct(p.id, 'adm'); document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' }); };
+                    }
+                    tbodyAst.appendChild(tr);
+                }
+
+                if (tbodyAdm) {
+                    const tr = document.createElement("tr");
+                    tr.className = "clickable-row";
+                    tr.style.cursor = "pointer";
+                    tr.innerHTML = trContent;
+                    tr.onclick = () => { selectProduct(p.id, 'adm'); document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' }); };
+                    tbodyAdm.appendChild(tr);
+                }
+                compteurLigne++;
+            });
+
+            const footContent = `
+                <tr class="total-row">
+                    <td colspan="2">TOTAL</td>
+                    <td>-</td>
+                    <td style="color: #3182ce; background: #ebf8ff;">${sommePua.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #38a169; background: #f0fff4;">${sommePuaTot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #3182ce; background: #ebf8ff;">${sommePvu.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #38a169; background: #f0fff4;">${sommePvuTot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #3182ce; background: #e2e8f0;">${sommePvevo.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #38a169; background: #f0fff4;">${sommeBeneficesJ.toFixed(2).replace('.00', '')} Fc</td>
+                    <td>-</td>
+                </tr>
+            `;
+            if (tfootAst && produitsAafficher.length > 0) tfootAst.innerHTML = footContent;
+            if (tfootAdm && produitsAafficher.length > 0) tfootAdm.innerHTML = footContent;
+        }
+
+        async function lancerControleInventaire(produitId) {
+    // Correction ici : on utilise uniquement produitId
+    const produit = inventaire.find(p => p.id === produitId);
+    if (!produit) return;
+
+    const stockTheorique = nombre(produit.stock);
+    
+    // 1. Demande à l'admin le stock physique réel
+    const saisie = prompt(`📦 CONTRÔLE D'INVENTAIRE - ${produit.nom}\n\nStock système actuel : ${stockTheorique} unités.\nCombien de boîtes/unités comptez-vous réellement sur l'étagère ?`);
+    
+    if (saisie === null || saisie.trim() === "") return; // Annulation
+    
+    const stockPhysique = nombre(saisie);
+    if (isNaN(stockPhysique) || stockPhysique < 0) {
+        alert("Veuillez saisir une quantité valide positive ou égale à 0.");
+        return;
     }
 
-    const dateAujourdhui = extraireDateCible();
+    const difference = stockPhysique - stockTheorique;
+    let observation = "";
 
-    let sommePua = 0;
-    let sommePvu = 0;
-    let sommePuaTot = 0;
-    let sommePvuTot = 0;
-    let sommePvevo = 0;
-    let sommeBeneficesJ = 0;
+    // 2. Calcul de la logique d'audit
+    if (difference === 0) {
+        observation = "Contrôle OK. Stock conforme.";
+    } else if (difference < 0) {
+        const manquant = Math.abs(difference);
+        observation = `Inventaire : Écart de -${manquant} unités (Considéré manquant/vendu sans encaissement)`;
+    } else {
+        observation = `Inventaire : Surplus de +${difference} unités constatées en rayon.`;
+    }
 
-    // Calcul des totaux
-    listeFiltree.forEach(p => {
-        sommePua += nombre(p.pua || 0);
-        sommePvu += nombre(p.pvu || 0);
+    const dateAujourdhui = extraireDateCible(); // Synchronisé sur la date d'analyse choisie
+
+    try {
+        // 3. Mise à jour de la table Inventaire sur Supabase
+        const { error: errInv } = await dbCloud.from('inventaire').update({ 
+            stock: stockPhysique,
+            dernier_controle: dateAujourdhui
+        }).eq('id', produit.id);
+
+        if (errInv) throw errInv;
+
+        // 4. Enregistrement de la trace d'Audit indélébile dans mouvements_stock
+        await enregistrerMouvementCloud("AJUSTEMENT", produit, Math.abs(difference), stockTheorique, stockPhysique, observation);
+
+        alert(`✅ Inventaire enregistré pour ${produit.nom} !\nNouveau stock fixé à : ${stockPhysique}\nRésultat : ${observation}`);
         
-        const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui);
-        const qteVendue = ventesDuJour.reduce((acc, v) => acc + nombre(v.quantite || 0), 0);
-        
-        const puatot = nombre(p.stock) * nombre(p.pua || 0);
-        const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
-        
-        // Logique demandée : Évol Stock = Quantité vendue * P.V.U
-        const pvevo = qteVendue * nombre(p.pvu || 0);
+        // 5. Recharger pour mettre à jour les graphiques et tableaux instantanément
+        await chargerDonnees();
 
-        sommePuaTot += puatot;
-        sommePvuTot += pvutot;
-        sommePvevo += pvevo;
-
-        const benef = ventesDuJour.reduce((acc, v) => acc + nombre(v.profit || 0), 0);
-        sommeBeneficesJ += benef;
-    });
-
-    const indexDebut = pageActuelle * produitsParPage;
-    const indexFin = indexDebut + produitsParPage;
-    const produitsAafficher = listeFiltree.slice(indexDebut, indexFin);
-
-    // Pagination et UI
-    const totalPages = Math.ceil(listeFiltree.length / produitsParPage) || 1;
-    const txtPage = `Page ${pageActuelle + 1} / ${totalPages}`;
-    if(document.getElementById("page-indicator-ast")) document.getElementById("page-indicator-ast").innerText = txtPage;
-    if(document.getElementById("page-indicator-adm")) document.getElementById("page-indicator-adm").innerText = txtPage;
-
-    let compteurLigne = indexDebut + 1;
-
-    produitsAafficher.forEach(p => {
-        const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui);
-        const qteVendue = ventesDuJour.reduce((acc, v) => acc + nombre(v.quantite || 0), 0);
-        const beneficeGeneres = ventesDuJour.reduce((acc, v) => acc + nombre(v.profit || 0), 0);
-
-        const puatot = nombre(p.stock) * nombre(p.pua || 0);
-        const pvutot = nombre(p.stock) * nombre(p.pvu || 0);
-        
-        // Calcul appliqué ici
-        const pvevo = qteVendue * nombre(p.pvu || 0);
-
-        const estProchePeremption = verifierPeremptionProche(p.peremption);
-        const styleNom = estProchePeremption ? 'color: #e53e3e; font-weight: bold;' : '';
-        const affichageDate = p.peremption ? `<br><small style="color:#718096; font-weight:normal;">Exp: ${p.peremption.split('-').reverse().join('/')}</small>` : '';
-
-        const trContent = `
-            <td style="color: #64748b; font-weight: bold;">${compteurLigne}</td>
-            <td><span style="${styleNom}">${p.nom}</span>${affichageDate}</td>
-            <td><span class="badge ${nombre(p.stock) <= 2 ? 'alert':'ok'}">${nombre(p.stock)}</span></td>
-            <td style="color: #3182ce; font-weight:500; background: #ebf8ff;">${nombre(p.pua || 0)} Fc</td>
-            <td style="color: #38a169; font-weight:600; background: #f0fff4;">${puatot.toFixed(2).replace('.00', '')} Fc</td>
-            <td style="color: #3182ce; font-weight:600; background: #ebf8ff;">${nombre(p.pvu || 0)} Fc</td>
-            <td style="color: #38a169; font-weight:600; background: #f0fff4;">${pvutot.toFixed(2).replace('.00', '')} Fc</td>
-            <td style="color: #3182ce; font-weight:bold; background: #e2e8f0;">
-                ${pvevo.toFixed(2).replace('.00', '')} Fc
-                <br><small style="color:#64748b; font-weight:normal;">(${qteVendue} vendus)</small>
-            </td>
-            <td style="color: #38a169; font-weight:bold; background: #f0fff4;">${beneficeGeneres} Fc</td>
-        `;
-
-        if (tbodyAst) {
-            const tr = document.createElement("tr");
-            tr.className = "clickable-row";
-            tr.innerHTML = trContent;
-            if (utilisateurConnecte && utilisateurConnecte.role === 'admin') {
-                tr.style.cursor = "pointer";
-                tr.onclick = () => { switchScreen('admin'); openAdminSubSection('sub-admin-logistique'); selectProduct(p.id, 'adm'); document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' }); };
-            }
-            tbodyAst.appendChild(tr);
-        }
-
-        if (tbodyAdm) {
-            const tr = document.createElement("tr");
-            tr.className = "clickable-row";
-            tr.style.cursor = "pointer";
-            tr.innerHTML = trContent;
-            tr.onclick = () => { selectProduct(p.id, 'adm'); document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' }); };
-            tbodyAdm.appendChild(tr);
-        }
-        compteurLigne++;
-    });
-
-    const footContent = `
-        <tr class="total-row">
-            <td colspan="2">TOTAL</td>
-            <td>-</td>
-            <td style="color: #3182ce; background: #ebf8ff;">${sommePua.toFixed(2).replace('.00', '')} Fc</td>
-            <td style="color: #38a169; background: #f0fff4;">${sommePuaTot.toFixed(2).replace('.00', '')} Fc</td>
-            <td style="color: #3182ce; background: #ebf8ff;">${sommePvu.toFixed(2).replace('.00', '')} Fc</td>
-            <td style="color: #38a169; background: #f0fff4;">${sommePvuTot.toFixed(2).replace('.00', '')} Fc</td>
-            <td style="color: #3182ce; background: #e2e8f0;">${sommePvevo.toFixed(2).replace('.00', '')} Fc</td>
-            <td style="color: #38a169; background: #f0fff4;">${sommeBeneficesJ.toFixed(2).replace('.00', '')} Fc</td>
-        </tr>
-    `;
-    if (tfootAst && produitsAafficher.length > 0) tfootAst.innerHTML = footContent;
-    if (tfootAdm && produitsAafficher.length > 0) tfootAdm.innerHTML = footContent;
+    } catch (error) {
+        alert("Erreur lors de la sauvegarde de l'inventaire : " + error.message);
+    }
 }
-
 
 
         function searchProduct(query, mode) {
@@ -1520,12 +1592,15 @@
             div.innerHTML = "";
 
             const dateCible = extraireDateCible(); 
-            const fragments = dateCible.split("-");
-            const dateFormateeFr = `${fragments[2]}/${fragments[1]}/${fragments[0]}`;
+            const mouvementsFilitres = mouvementsStock.filter(m => {
+                if (!m.created_at) return false;
+                return m.created_at.startsWith(dateCible); 
+            });
 
-            const mouvementsFilitres = mouvementsStock.filter(m => m.date && m.date.startsWith(dateFormateeFr));
-
-            if (mouvementsFilitres.length === 0) { div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucun mouvement pour cette date.</p>'; return; }
+            if (mouvementsFilitres.length === 0) { 
+                div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucun mouvement pour cette date.</p>'; 
+                return; 
+            }
 
             mouvementsFilitres.forEach(m => {
                 let badgeStyle = "background: #cbd5e1; color: #1e293b;";
@@ -1649,12 +1724,10 @@
                 document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
                 renderMouvements();
             } else {
-                // ESPACE ADMIN PRINCIPAL
                 if (screenAdm) { screenAdm.style.display = 'block'; screenAdm.classList.add('active'); }
                 document.getElementById('tab-admin-nav').classList.add('active');
                 document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
                 
-                // UX : Quand on clique sur l'onglet Admin, on réinitialise toujours sur la grille principale de l'Espace Admin
                 closeAdminSubSection();
                 
                 renderAdminScreen();
