@@ -460,7 +460,7 @@
                                 <th style="color:var(--accent-green);">P.V.Tot</th>
                                 <th style="color:var(--accent-blue);">Évol Stock</th>
                                 <th style="color:var(--accent-green);">Bénéf. J.</th>
-                                <th style="color:var(--primary-dark);">Contrôle</th> <!-- Nouvelle colonne Assistant -->
+                                <th style="color:var(--primary-dark);">Contrôle</th>
                             </tr>
                         </thead>
                         <tbody id="catalog-table-body-ast"></tbody>
@@ -475,7 +475,7 @@
             </div>
 
             <div class="card" style="border-left: 4px solid var(--primary-dark);">
-                <h3>📊 Bilan Ventes Assistant (Journée Sélectionnée)</h3>
+                <h3>📊 Bilan Ventes Assistant (Période Sélectionnée)</h3>
                 <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
                     <input type="text" id="filter-bilan-ventes" placeholder="Rechercher un produit dans le bilan..." oninput="renderBilanVentes()">
                 </div>
@@ -488,7 +488,7 @@
         <div id="screen-mouvements" class="screen">
             <div class="card">
                 <h3>📜 Journal complet des mouvements</h3>
-                <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Historique global des flux de stock (Ventes, Entrées, Ajustements).</p>
+                <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Historique des flux de stock pour la période sélectionnée.</p>
                 <div id="shared-liste-mouvements"></div>
             </div>
         </div>
@@ -535,9 +535,19 @@
 
                 <div class="card" style="border-left: 4px solid var(--accent-blue);">
                     <h3>📅 Consultation Historique & Clôture</h3>
+                    <!-- Insertion de votre sélecteur de période -->
                     <div class="form-group">
-                        <label for="filtre-date-admin">Choisir la date d'analyse :</label>
-                        <input type="date" id="filtre-date-admin" onchange="changerDateAnalyse(this.value)">
+                        <label>🎯 Choisir la période d'analyse :</label>
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                            <div style="flex: 1;">
+                                <small style="color: #666;">Date de début :</small>
+                                <input type="date" id="date-debut" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            </div>
+                            <div style="flex: 1;">
+                                <small style="color: #666;">Date de fin :</small>
+                                <input type="date" id="date-fin" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            </div>
+                        </div>
                     </div>
                     <button class="btn-danger" style="margin-top:10px; font-size:0.9rem;" onclick="reinitialiserVentesCloud()">🚨 Réinitialiser toutes les ventes à 0</button>
                 </div>
@@ -547,17 +557,17 @@
             <div id="sub-admin-finances" class="admin-section" style="display: none;">
                 <div class="kpi-container">
                     <div class="kpi-card" style="border-left-color: var(--primary-dark);">
-                        <div class="kpi-title">Recettes du Jour</div>
+                        <div class="kpi-title" id="title-recettes">Recettes Période</div>
                         <div class="kpi-value" id="kpi-sales" style="color: var(--primary-dark);">0 Fc</div>
                     </div>
                     <div class="kpi-card" style="border-left-color: var(--accent-green);">
-                        <div class="kpi-title">Bénéfice Réel</div>
+                        <div class="kpi-title" id="title-benefices">Bénéfice Réel</div>
                         <div class="kpi-value" style="color: var(--accent-green);" id="kpi-profit">0 Fc</div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3>Journal des Ventes en direct</h3>
+                    <h3>Journal des Ventes de la période</h3>
                     <div id="admin-sales-log" style="max-height: 400px; overflow-y: auto; padding-right: 4px;"></div>
                 </div>
             </div>
@@ -614,8 +624,8 @@
                                     <th>P.V.U</th>
                                     <th style="color:var(--accent-green);">P.V.Tot</th>
                                     <th style="color:var(--accent-blue);">Évol Stock</th>
-                                    <th style="color:var(--accent-green);">Bénéf. J.</th>
-                                    <th style="color:var(--primary-dark);">Contrôle</th> <!-- Nouvelle colonne Admin -->
+                                    <th style="color:var(--accent-green);">Bénéf. P.</th>
+                                    <th style="color:var(--primary-dark);">Contrôle</th>
                                 </tr>
                             </thead>
                             <tbody id="catalog-table-body-adm"></tbody>
@@ -706,7 +716,7 @@
 
                 <div class="card" style="border-left: 4px solid var(--warning);">
                     <h3>📦 Historique des Réapprovisionnements</h3>
-                    <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Suivi précis des entrées de stocks par produit et auteur.</p>
+                    <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Suivi des entrées de stocks par produit.</p>
                     <div id="admin-reapp-log" style="max-height: 250px; overflow-y: auto;"></div>
                 </div>
 
@@ -758,7 +768,6 @@
         const produitsParPage = 25; 
         let filtreTexteTableau = "";
 
-        // ----- FONCTIONS DE NAVIGATION DES SOUS-MENUS ADMIN (OPTION 1) -----
         function openAdminSubSection(sectionId) {
             document.getElementById('admin-main-menu-grid').style.display = 'none';
             const sections = document.querySelectorAll('.admin-section');
@@ -819,22 +828,65 @@
             }
         }
 
+        // Nouvelle structure optimisée fusionnée avec vos critères de filtrage par période gte/lte
         async function chargerDonnees() {
-            try {
-                const { data: inv } = await dbCloud.from('inventaire').select('*').order('nom', { ascending: true });
-                const { data: hist } = await dbCloud.from('historique_ventes').select('*').order('created_at', { ascending: false });
-                const { data: mouv } = await dbCloud.from('mouvements_stock').select('*').order('created_at', { ascending: false });
-                const { data: users } = await dbCloud.from('utilisateurs').select('*').order('nom', { ascending: true });
+            const dateDebut = document.getElementById('date-debut').value;
+            const dateFin = document.getElementById('date-fin').value;
 
+            if (!dateDebut || !dateFin) return;
+
+            try {
+                // Charge d'abord l'inventaire complet et les utilisateurs (nécessaires au reste de l'application)
+                const { data: inv } = await dbCloud.from('inventaire').select('*').order('nom', { ascending: true });
+                const { data: users } = await dbCloud.from('utilisateurs').select('*').order('nom', { ascending: true });
+                
                 if (inv) inventaire = inv;
-                if (hist) historiqueVentes = hist;
-                if (mouv) mouvementsStock = mouv;
                 if (users) listeUtilisateurs = users;
 
-                recalculerFinancesGlobales();
+                // 1. Récupération des ventes pour la période donnée
+                const { data: ventes, error: errVentes } = await dbCloud
+                    .from('historique_ventes')
+                    .select('*')
+                    .gte('date', dateDebut)
+                    .lte('date', dateFin);
+
+                if (errVentes) throw errVentes;
+                historiqueVentes = ventes || [];
+
+                // 2. Récupération des mouvements de stock pour la même période
+                const { data: mouvements, error: errMouv } = await dbCloud
+                    .from('mouvements_stock')
+                    .select('*')
+                    .gte('created_at', dateDebut + "T00:00:00") // Adaptation sécurisée pour ISOString
+                    .lte('created_at', dateFin + "T23:59:59");
+
+                if (errMouv) throw errMouv;
+                mouvementsStock = mouvements || [];
+
+                // --- CALCUL DES RECETTES ET BÉNÉFICES SUR LA PÉRIODE ---
+                totalVentesFc = 0;
+                totalProfitFc = 0;
+
+                const ventesValides = historiqueVentes.filter(v => v.statut === 'VALIDE');
+
+                ventesValides.forEach(vente => {
+                    totalVentesFc += nombre(vente.total);
+                    totalProfitFc += nombre(vente.profit); 
+                });
+
+                // 3. Mise à jour de l'affichage des compteurs 
+                if(document.getElementById('kpi-sales')) {
+                    document.getElementById('kpi-sales').innerText = `${totalVentesFc.toFixed(2).replace('.00', '')} Fc`;
+                }
+                if(document.getElementById('kpi-profit')) {
+                    document.getElementById('kpi-profit').innerText = `${totalProfitFc.toFixed(2).replace('.00', '')} Fc`;
+                }
+
+                // 4. Actualisation des interfaces graphiques
                 refreshUI();
-            } catch (e) {
-                console.error("Erreur de synchronisation : ", e);
+
+            } catch (error) {
+                console.error("Erreur lors du filtrage périodique :", error.message);
             }
         }
 
@@ -900,42 +952,13 @@
         }
 
         function extraireDateCible() {
-            let dateCible = document.getElementById("filtre-date-admin")?.value;
+            let dateCible = document.getElementById("date-debut")?.value;
             if (!dateCible) {
                 const maintenant = new Date();
                 const offset = maintenant.getTimezoneOffset();
                 dateCible = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
             }
             return dateCible;
-        }
-
-        function recalculerFinancesGlobales() {
-            const dateCible = extraireDateCible();
-
-            totalVentesFc = historiqueVentes
-                .filter(v => v.statut === "VALIDE" && v.date === dateCible)
-                .reduce((acc, v) => acc + nombre(v.total || 0), 0);
-                
-            totalProfitFc = historiqueVentes
-                .filter(v => v.statut === "VALIDE" && v.date === dateCible)
-                .reduce((acc, v) => acc + nombre(v.profit || 0), 0);
-        }
-
-        async function changerDateAnalyse(nouvelleDate) {
-            if(!nouvelleDate) return;
-            recalculerFinancesGlobales();
-            
-            if (utilisateurConnecte) {
-                if (utilisateurConnecte.role === 'admin') {
-                    renderAdminScreen();
-                    renderAlphabeticalCatalog();
-                    renderReappLog();
-                } else {
-                    renderBilanVentes();
-                    renderAlphabeticalCatalog();
-                }
-                renderMouvements();
-            }
         }
 
         async function reinitialiserVentesCloud() {
@@ -1082,14 +1105,11 @@
             if(!container) return;
             container.innerHTML = "";
 
-            const dateCible = extraireDateCible(); 
-            const fragments = dateCible.split("-");
-            const dateFormateeFr = `${fragments[2]}/${fragments[1]}/${fragments[0]}`;
-
-            const reapps = mouvementsStock.filter(m => m.type === "REAPPRO" && m.date && m.date.startsWith(dateFormateeFr));
+            // Filtre les réappro enregistrés dans le tableau local mouvementsStock (déjà filtré par période)
+            const reapps = mouvementsStock.filter(m => m.type === "REAPPRO");
             
             if(reapps.length === 0) {
-                container.innerHTML = `<p style="color:#718096; font-size:0.85rem; text-align:center;">Aucun réapprovisionnement enregistré pour cette date.</p>`;
+                container.innerHTML = `<p style="color:#718096; font-size:0.85rem; text-align:center;">Aucun réapprovisionnement sur cette période.</p>`;
                 return;
             }
 
@@ -1138,8 +1158,6 @@
                 listeFiltree = listeFiltree.filter(p => p.nom.toLowerCase().includes(filtreTexteTableau));
             }
 
-            const dateAujourdhui = extraireDateCible();
-
             let sommePua = 0;
             let sommePvu = 0;
             let sommePuaTot = 0;
@@ -1151,7 +1169,7 @@
                 sommePua += nombre(p.pua || 0);
                 sommePvu += nombre(p.pvu || 0);
                 
-                const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui);
+                const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE");
                 const qteVendue = ventesDuJour.reduce((acc, v) => acc + nombre(v.quantite || 0), 0);
                 
                 const puatot = nombre(p.stock) * nombre(p.pua || 0);
@@ -1178,7 +1196,7 @@
             let compteurLigne = indexDebut + 1;
 
             produitsAafficher.forEach(p => {
-                const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateAujourdhui);
+                const ventesDuJour = historiqueVentes.filter(v => v.produit_id === p.id && v.statut === "VALIDE");
                 const qteVendue = ventesDuJour.reduce((acc, v) => acc + nombre(v.quantite || 0), 0);
                 const beneficeGeneres = ventesDuJour.reduce((acc, v) => acc + nombre(v.profit || 0), 0);
 
@@ -1190,11 +1208,10 @@
                 const styleNom = estProchePeremption ? 'color: #e53e3e; font-weight: bold;' : '';
                 const affichageDate = p.peremption ? `<br><small style="color:#718096; font-weight:normal;">Exp: ${p.peremption.split('-').reverse().join('/')}</small>` : '';
 
-                // ---- LOGIQUE DU BADGE DE CONTRÔLE ----
                 let badgeControle = `<span style="color:#64748b;">-</span>`;
                 if (p.dernier_controle) {
                     const dateDernier = new Date(p.dernier_controle);
-                    const dateRef = new Date(dateAujourdhui);
+                    const dateRef = new Date(extraireDateCible());
                     const diffTemps = dateRef.getTime() - dateDernier.getTime();
                     const diffJours = Math.floor(diffTemps / (1000 * 3600 * 24));
                     const joursRestants = 14 - diffJours;
@@ -1208,12 +1225,10 @@
                     badgeControle = `<span class="badge" style="background:#E2E8F0; color:#4A5568; padding:6px 10px;">🔴 Non contrôlé</span>`;
                 }
 
-                // Cellule dynamique avec structure cliquable conditionnelle (Admin ou Assistant simple)
                 let celluleControle = `<td>${badgeControle}</td>`;
                 if (utilisateurConnecte && utilisateurConnecte.role === 'admin') {
                     celluleControle = `<td><button onclick="lancerControleInventaire(${p.id}); event.stopPropagation();" style="width:auto; margin:0; padding:4px 8px; font-size:0.8rem; background:none; border:none; cursor:pointer;">${badgeControle}</button></td>`;
                 }
-                // --------------------------------------
 
                 const trContent = `
                     <td style="color: #64748b; font-weight: bold;">${compteurLigne}</td>
@@ -1228,7 +1243,7 @@
                         <br><small style="color:#64748b; font-weight:normal;">(${qteVendue} vendus)</small>
                     </td>
                     <td style="color: #38a169; font-weight:bold; background: #f0fff4;">${beneficeGeneres} Fc</td>
-                    ${celluleControle} <!-- Injection de la cellule de contrôle -->
+                    ${celluleControle}
                 `;
 
                 if (tbodyAst) {
@@ -1271,59 +1286,53 @@
         }
 
         async function lancerControleInventaire(produitId) {
-    // Correction ici : on utilise uniquement produitId
-    const produit = inventaire.find(p => p.id === produitId);
-    if (!produit) return;
+            const produit = inventaire.find(p => p.id === produitId);
+            if (!produit) return;
 
-    const stockTheorique = nombre(produit.stock);
-    
-    // 1. Demande à l'admin le stock physique réel
-    const saisie = prompt(`📦 CONTRÔLE D'INVENTAIRE - ${produit.nom}\n\nStock système actuel : ${stockTheorique} unités.\nCombien de boîtes/unités comptez-vous réellement sur l'étagère ?`);
-    
-    if (saisie === null || saisie.trim() === "") return; // Annulation
-    
-    const stockPhysique = nombre(saisie);
-    if (isNaN(stockPhysique) || stockPhysique < 0) {
-        alert("Veuillez saisir une quantité valide positive ou égale à 0.");
-        return;
-    }
+            const stockTheorique = nombre(produit.stock);
+            
+            const saisie = prompt(`📦 CONTRÔLE D'INVENTAIRE - ${produit.nom}\n\nStock système actuel : ${stockTheorique} unités.\nCombien de boîtes/unités comptez-vous réellement sur l'étagère ?`);
+            
+            if (saisie === null || saisie.trim() === "") return; 
+            
+            const stockPhysique = nombre(saisie);
+            if (isNaN(stockPhysique) || stockPhysique < 0) {
+                alert("Veuillez saisir une quantité valide positive ou égale à 0.");
+                return;
+            }
 
-    const difference = stockPhysique - stockTheorique;
-    let observation = "";
+            const difference = stockPhysique - stockTheorique;
+            let observation = "";
 
-    // 2. Calcul de la logique d'audit
-    if (difference === 0) {
-        observation = "Contrôle OK. Stock conforme.";
-    } else if (difference < 0) {
-        const manquant = Math.abs(difference);
-        observation = `Inventaire : Écart de -${manquant} unités (Considéré manquant/vendu sans encaissement)`;
-    } else {
-        observation = `Inventaire : Surplus de +${difference} unités constatées en rayon.`;
-    }
+            if (difference === 0) {
+                observation = "Contrôle OK. Stock conforme.";
+            } else if (difference < 0) {
+                const manquant = Math.abs(difference);
+                observation = `Inventaire : Écart de -${manquant} unités (Considéré manquant/vendu sans encaissement)`;
+            } else {
+                observation = `Inventaire : Surplus de +${difference} unités constatées en rayon.`;
+            }
 
-    const dateAujourdhui = extraireDateCible(); // Synchronisé sur la date d'analyse choisie
+            const dateAujourdhui = extraireDateCible(); 
 
-    try {
-        // 3. Mise à jour de la table Inventaire sur Supabase
-        const { error: errInv } = await dbCloud.from('inventaire').update({ 
-            stock: stockPhysique,
-            dernier_controle: dateAujourdhui
-        }).eq('id', produit.id);
+            try {
+                const { error: errInv } = await dbCloud.from('inventaire').update({ 
+                    stock: stockPhysique,
+                    dernier_controle: dateAujourdhui
+                }).eq('id', produit.id);
 
-        if (errInv) throw errInv;
+                if (errInv) throw errInv;
 
-        // 4. Enregistrement de la trace d'Audit indélébile dans mouvements_stock
-        await enregistrerMouvementCloud("AJUSTEMENT", produit, Math.abs(difference), stockTheorique, stockPhysique, observation);
+                await enregistrerMouvementCloud("AJUSTEMENT", produit, Math.abs(difference), stockTheorique, stockPhysique, observation);
 
-        alert(`✅ Inventaire enregistré pour ${produit.nom} !\nNouveau stock fixé à : ${stockPhysique}\nRésultat : ${observation}`);
-        
-        // 5. Recharger pour mettre à jour les graphiques et tableaux instantanément
-        await chargerDonnees();
+                alert(`✅ Inventaire enregistré pour ${produit.nom} !\nNouveau stock fixé à : ${stockPhysique}\nRésultat : ${observation}`);
+                
+                await chargerDonnees();
 
-    } catch (error) {
-        alert("Erreur lors de la sauvegarde de l'inventaire : " + error.message);
-    }
-}
+            } catch (error) {
+                alert("Erreur lors de la sauvegarde de l'inventaire : " + error.message);
+            }
+        }
 
 
         function searchProduct(query, mode) {
@@ -1551,13 +1560,12 @@
             div.innerHTML = "";
             let aDesVentes = false;
 
-            const dateCible = extraireDateCible();
             const filtreInput = document.getElementById("filter-bilan-ventes");
             const filtreTexte = filtreInput ? filtreInput.value.toLowerCase().trim() : "";
 
             inventaire.forEach(p => {
                 const totalVenduProd = historiqueVentes
-                    .filter(v => v.produit_id === p.id && v.statut === "VALIDE" && v.date === dateCible)
+                    .filter(v => v.produit_id === p.id && v.statut === "VALIDE")
                     .reduce((s,v) => s + nombre(v.quantite || 0), 0); 
 
                 if(totalVenduProd > 0) {
@@ -1591,18 +1599,12 @@
             if (!div) return;
             div.innerHTML = "";
 
-            const dateCible = extraireDateCible(); 
-            const mouvementsFilitres = mouvementsStock.filter(m => {
-                if (!m.created_at) return false;
-                return m.created_at.startsWith(dateCible); 
-            });
-
-            if (mouvementsFilitres.length === 0) { 
-                div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucun mouvement pour cette date.</p>'; 
+            if (mouvementsStock.length === 0) { 
+                div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucun mouvement pour cette période.</p>'; 
                 return; 
             }
 
-            mouvementsFilitres.forEach(m => {
+            mouvementsStock.forEach(m => {
                 let badgeStyle = "background: #cbd5e1; color: #1e293b;";
                 let label = m.type;
                 if (m.type === "VENTE") { badgeStyle = "background: #d1fae5; color: #065f46;"; label = "🟢 VENTE"; }
@@ -1654,24 +1656,19 @@
         }
 
         function renderAdminScreen() {
-            document.getElementById('kpi-sales').innerText = `${totalVentesFc.toFixed(2).replace('.00', '')} Fc`;
-            document.getElementById('kpi-profit').innerText = `${totalProfitFc.toFixed(2).replace('.00', '')} Fc`;
-
             if (selectedProductIdAdm) {
                 const p = inventaire.find(prod => prod.id === selectedProductIdAdm);
                 if (p) showAdminFocusCard(p);
             }
 
             const log = document.getElementById('admin-sales-log');
-            const dateCible = extraireDateCible();
-            
-            const ventesFiltrées = historiqueVentes.filter(v => v.date === dateCible);
+            if (!log) return;
 
-            if (ventesFiltrées.length === 0) {
-                log.innerHTML = `<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucune vente en direct pour cette date.</p>`;
+            if (historiqueVentes.length === 0) {
+                log.innerHTML = `<p style="color:#718096; text-align:center; font-size:0.85rem;">Aucune vente sur cette période.</p>`;
             } else {
                 log.innerHTML = '';
-                ventesFiltrées.forEach(v => {
+                historiqueVentes.forEach(v => {
                     const statusBadge = v.statut === "VALIDE" ? '<span style="color:#10b981;font-weight:bold;">✔ Valide</span>' : '<span style="color:#ef4444;font-weight:bold;">✖ Annulée</span>';
                     const cancelBtn = v.statut === "VALIDE" ? `<button style="margin-top:8px; background:var(--danger); padding:6px; font-size:12px; width:auto;" onclick="annulerVente('${v.id}')">Annuler</button>` : '';
 
@@ -1739,11 +1736,21 @@
             localStorage.removeItem("pharma_user"); 
             chargerNomPharmacie(); 
             
-            const pika = document.getElementById("filtre-date-admin");
-            if (pika) {
+            // Initialisation de la période sur le jour actuel
+            const inputDebut = document.getElementById('date-debut');
+            const inputFin = document.getElementById('date-fin');
+
+            if (inputDebut && inputFin) {
                 const maintenant = new Date();
                 const offset = maintenant.getTimezoneOffset();
-                pika.value = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
+                const aujourdhui = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
+                
+                inputDebut.value = aujourdhui;
+                inputFin.value = aujourdhui;
+
+                // Ajout des écouteurs de changements
+                inputDebut.addEventListener('change', chargerDonnees);
+                inputFin.addEventListener('change', chargerDonnees);
             }
 
             const sessionActive = localStorage.getItem("pharma_user_session");
