@@ -592,6 +592,34 @@
                     </div>
                 </div>
 
+                <!-- RÉPERTOIRE DES PRODUITS MANQUANTS / VENDUS SANS ENCAISSEMENT -->
+                <div class="card" style="border: 1px solid var(--warning); background: #fffdfa;">
+                    <div class="card-title" style="color: #b45309; display: flex; justify-content: space-between; align-items: center;">
+                        <span>📉 Produits Manquants / Vendus sans encaissement</span>
+                        <button onclick="toggleRepertoireManquants()" id="btn-toggle-rep" style="width: auto; margin: 0; padding: 4px 10px; font-size: 0.8rem; background: var(--warning);">Afficher la liste</button>
+                    </div>
+                    
+                    <div id="zone-repertoire-manquants" style="display: none; margin-top: 10px;">
+                        <input type="text" id="filter-manquants" placeholder="Filtrer par nom de médicament..." oninput="renderRepertoireManquants()" style="padding: 6px 10px; font-size: 0.85rem; margin-bottom: 8px;">
+                        
+                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date & Heure</th>
+                                        <th>Médicament</th>
+                                        <th>Quantité Manquante</th>
+                                        <th>Auteur du Contrôle</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body-manquants">
+                                    <!-- Rendu dynamique -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Zone de Focus Modification / Réapprovisionnement -->
                 <div class="card" id="adm-focus-card" style="display: none; border-left: 4px solid var(--accent-blue);">
                     <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
@@ -827,6 +855,7 @@
                 renderAdminScreen();
             } else if (sectionId === 'sub-admin-logistique') {
                 renderRupturesStock();
+                renderRepertoireManquants();
             }
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -973,6 +1002,7 @@
             try { renderMouvements(); } catch(e) { console.error(e); }
             try { renderTop10Ventes(); } catch(e) { console.error(e); }
             try { renderRupturesStock(); } catch(e) { console.error(e); }
+            try { renderRepertoireManquants(); } catch(e) { console.error(e); }
         }
 
         async function loginApp() {
@@ -1239,6 +1269,58 @@
             });
         }
 
+        // GESTION DU RÉPERTOIRE DES MANQUANTS
+        function toggleRepertoireManquants() {
+            const zone = document.getElementById("zone-repertoire-manquants");
+            const btn = document.getElementById("btn-toggle-rep");
+            if (zone.style.display === "none") {
+                zone.style.display = "block";
+                btn.innerText = "Masquer la liste";
+                renderRepertoireManquants();
+            } else {
+                zone.style.display = "none";
+                btn.innerText = "Afficher la liste";
+            }
+        }
+
+        function renderRepertoireManquants() {
+            const tbody = document.getElementById("table-body-manquants");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const filtreInput = document.getElementById("filter-manquants");
+            const filtreTexte = filtreInput ? filtreInput.value.toLowerCase().trim() : "";
+
+            const manquants = mouvementsStock.filter(m => 
+                m.type === "AJUSTEMENT" && 
+                m.observation && 
+                m.observation.includes("Considéré manquant/vendu sans encaissement")
+            );
+
+            manquants.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            let lFiltree = manquants;
+            if (filtreTexte !== "") {
+                lFiltree = manquants.filter(m => m.produit && m.produit.toLowerCase().includes(filtreTexte));
+            }
+
+            if (lFiltree.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:12px;">Aucun produit manquant trouvé sur cette période.</td></tr>`;
+                return;
+            }
+
+            lFiltree.forEach(m => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="color: var(--text-muted);">${m.date}</td>
+                    <td style="font-weight: 600; color: var(--danger);">${m.produit}</td>
+                    <td style="font-weight: bold; text-align: center; background: #fef2f2; color: var(--danger);">${m.quantite} u.</td>
+                    <td><strong style="color: var(--primary-dark);">${m.assistant}</strong></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
         function filtrerCatalogueTableau(texte) {
             filtreTexteTableau = texte.toLowerCase().trim();
             pageActuelle = 0; 
@@ -1494,7 +1576,6 @@
                 selectedProductIdAdm = id;
                 showAdminFocusCard(produit);
                 
-                // Défilement fluide vers la carte de focus pour que l'admin voie instantanément le produit cliqué
                 document.getElementById('adm-focus-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
@@ -1778,7 +1859,6 @@
                 return; 
             }
 
-            // CORRECTION : Tri automatique des mouvements par ordre décroissant (du plus récent au plus ancien)
             const mouvementsTries = [...mouvementsStock].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
             mouvementsTries.forEach(m => {
