@@ -2,178 +2,251 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PharmaSys Mobile - Cloud Synchro & Gestion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PharmaSys - Gestion de Pharmacie</title>
+    <!-- Inclure Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0A5C43">
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
-            });
-        }
-    </script>
-
     <style>
         :root {
-            --primary-dark: #0A5C43; /* Vert foncé Header et Titres */
-            --primary-light: #337A65; /* Vert Badge / Admin */
-            --bg-color: #F4F7F6; /* Fond général de la page */
-            --card-bg: #FFFFFF;
-            --text-dark: #2D3748;
-            --danger: #A61C1C; /* Rouge Déconnexion */
-            --warning: #F59E0B;
-            --accent-blue: #1A53A1; /* Bleu P.U.A / P.V.U */
-            --accent-green: #10A36E; /* Vert P.V.U.Tot / P.A.Tot / Bénéfices */
-            --bg-blue-light: #EEF3FC; /* Fond bleu très clair */
-            --bg-green-light: #EAF7F2; /* Fond vert très clair */
-            --bg-blue-evo: #D6E6F7; /* Fond bleu/gris Évo stock */
-            --btn-nav-gray: #5A738E; /* Bleu ardoise boutons de navigation */
+            --primary: #10b981;
+            --primary-dark: #047857;
+            --primary-light: #e6f4ea;
+            --accent-blue: #3182ce;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-dark);
-            padding-bottom: 80px;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding-bottom: 70px;
         }
 
         header {
-            background-color: var(--primary-dark);
-            color: white;
-            padding: 15px;
-            text-align: center;
-            border-bottom: 4px solid var(--primary-light);
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .header-top {
+        .header-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 600px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
-        .btn-logout {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            font-size: 0.8rem;
-            border-radius: 4px;
-            cursor: pointer;
-            width: auto;
-            margin-top: 0;
+        h1 {
+            font-size: 1.25rem;
+            color: var(--primary-dark);
+            font-weight: 700;
         }
 
-        .role-indicator {
-            font-size: 0.8rem;
-            background: var(--primary-light);
-            color: #FFFFFF;
-            padding: 3px 10px;
-            border-radius: 10px;
-            display: inline-block;
-            margin-top: 5px;
+        .user-badge {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: right;
         }
 
         .container {
-            padding: 15px;
-            max-width: 600px;
+            max-width: 1200px;
             margin: 0 auto;
-        }
-
-        .screen {
+            padding: 16px;
             display: none;
         }
 
+        /* Login Screen */
+        #login-screen {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 24px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .login-title {
+            color: var(--primary-dark);
+            margin-bottom: 24px;
+            font-size: 1.5rem;
+        }
+
+        /* Forms & Inputs */
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            background-color: #fff;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 8px;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: var(--text-main);
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+
+        .btn-accent {
+            background-color: var(--warning);
+            color: white;
+        }
+        .btn-accent:hover {
+            background-color: #d97706;
+        }
+
+        /* Navigation Bar */
+        #navigation-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            display: none;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: auto;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-item.active {
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
+
+        .nav-icon {
+            font-size: 1.25rem;
+            margin-bottom: 2px;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+        }
         .screen.active {
             display: block;
         }
 
-        .kpi-container {
+        /* Dashboard & Grid Modules */
+        .admin-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
             margin-bottom: 20px;
         }
 
-        .kpi-card {
+        .menu-card {
             background: var(--card-bg);
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary-light);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .kpi-title {
-            font-size: 0.8rem;
-            color: #718096;
-            text-transform: uppercase;
+        .menu-card:active {
+            transform: scale(0.98);
         }
 
-        .kpi-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-top: 5px;
+        .menu-card-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: block;
         }
 
+        .menu-card-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Cards & Containers */
         .card {
             background: var(--card-bg);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
 
-        h3 {
-            margin-bottom: 15px;
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
             color: var(--primary-dark);
-            font-size: 1.1rem;
-            border-bottom: 1px solid #E2E8F0;
-            padding-bottom: 5px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
         }
 
-        h5 {
-            font-size: 0.9rem;
-            color: var(--text-dark);
-            margin-bottom: 8px;
-        }
-
-        .form-group {
-            margin-bottom: 12px;
+        /* Search Autocomplete System */
+        .search-container {
             position: relative;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.85rem;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-
-        select, input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #CCCCCC;
-            border-radius: 6px;
-            font-size: 0.95rem;
+            margin-bottom: 16px;
         }
 
         .search-results {
@@ -181,136 +254,153 @@
             top: 100%;
             left: 0;
             right: 0;
-            background: white;
-            border: 1px solid #CBD5E1;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-top: none;
-            border-radius: 0 0 6px 6px;
+            border-radius: 0 0 8px 8px;
             max-height: 200px;
             overflow-y: auto;
             z-index: 10;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             display: none;
         }
 
         .search-results div {
-            padding: 10px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
             cursor: pointer;
-            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.9rem;
         }
 
-        .search-results div:hover {
-            background-color: #F1F5F9;
+        .search-results div:last-child {
+            border-bottom: none;
         }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--primary-dark);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 5px;
+        .search-results div:active {
+            background-color: #f1f5f9;
         }
 
-        button.btn-secondary { background-color: var(--btn-nav-gray); }
-        button.btn-accent { background-color: var(--accent-blue); }
-        button.btn-danger { background-color: var(--danger); }
-
+        /* List Items & Logs */
         .list-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #EDF2F7;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
         }
 
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Badges */
         .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
             font-size: 0.75rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
+            font-weight: 600;
         }
 
-        .badge.ok { background: #D1FAE5; color: #065F46; }
-        .badge.alert { background: #FEE2E2; color: #A61C1C; }
-
-        .nav-bottom {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 65px;
-            background: white;
-            display: flex;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            border-top: 1px solid #E2E8F0;
-            z-index: 99;
-        }
-
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            color: #6C757D;
-            cursor: pointer;
-        }
-
-        .nav-item.active {
+        .badge.ok {
+            background-color: var(--primary-light);
             color: var(--primary-dark);
-            font-weight: bold;
         }
 
-        .nav-icon {
-            font-size: 1.3rem;
-            margin-bottom: 2px;
+        .badge.alert {
+            background-color: #fef2f2;
+            color: var(--danger);
         }
 
-        .focused-product-card {
-            background: #F8FAFC;
-            border: 2px solid var(--primary-light);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-
+        /* Tables styles */
         .table-responsive {
             width: 100%;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
 
-        .table-products {
+        table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.85rem;
             text-align: left;
-            min-width: 650px;
+            background: var(--card-bg);
         }
 
-        .table-products th, .table-products td {
-            padding: 8px;
-            border-bottom: 1px solid #EDF2F7;
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
         }
 
-        .table-products th {
-            background-color: #F1F5F9;
-            color: var(--primary-dark);
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        tr.clickable-row:active {
+            background-color: #f8fafc;
+        }
+
+        tr.total-row {
+            font-weight: bold;
+            background: #f8fafc;
+            border-top: 2px solid var(--border-color);
+        }
+
+        /* Section Admin View Actions */
+        .admin-section {
+            display: none;
+        }
+
+        /* Date Picker Range Utility */
+        .date-range-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            background: var(--card-bg);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .date-range-bar div {
+            flex: 1;
+        }
+        .date-range-bar label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
             font-weight: bold;
         }
-
-        .total-row {
-            background-color: #E2E8F0;
-            font-weight: bold;
+        .date-range-bar input {
+            margin-bottom: 0;
+            padding: 6px 8px;
+            font-size: 0.85rem;
         }
-
-        .clickable-row:hover {
-            background-color: #F1F5F9;
+        .btn-filter-ok {
+            width: auto;
+            padding: 8px 16px;
+            background-color: var(--accent-blue);
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            margin-bottom: 0;
+            cursor: pointer;
+            height: 33px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-filter-ok:hover {
+            background-color: #2563eb;
         }
 
         .pagination-container {
@@ -318,149 +408,125 @@
             justify-content: space-between;
             align-items: center;
             margin-top: 12px;
-            gap: 10px;
+            background: var(--card-bg);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
 
         .pagination-container button {
-            padding: 8px 12px;
+            width: auto;
+            margin: 0;
+            padding: 6px 12px;
             font-size: 0.85rem;
-            margin-top: 0;
         }
 
-        /* ---------------- CONFIGURATION DE LA GRILLE DE NAVIGATION ADMIN ---------------- */
-        .admin-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
+        .input-group-pass {
+            position: relative;
+            display: flex;
+            align-items: center;
         }
-
-        .menu-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px 10px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
-            border: 1px solid #E2E8F0;
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
+        .input-group-pass input {
+            padding-right: 40px;
         }
-
-        .menu-card:active {
-            transform: scale(0.96);
-            background: #F8FAFC;
-        }
-
-        .menu-icon {
-            font-size: 1.8rem;
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        .menu-card h4 {
-            font-size: 0.95rem;
-            color: var(--primary-dark);
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-
-        .menu-card p {
-            font-size: 0.75rem;
-            color: #718096;
-            line-height: 1.2;
-        }
-
-        .btn-back-admin {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background-color: #E2E8F0;
-            color: var(--text-dark);
+        .toggle-pass-btn {
+            position: absolute;
+            right: 8px;
+            top: 10px;
+            background: none;
             border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            text-align: center;
+            width: auto;
+            padding: 0;
+            margin: 0;
             cursor: pointer;
-            margin-bottom: 15px;
-        }
-
-        .btn-back-admin:active {
-            background-color: #CBD5E1;
-        }
-
-        .admin-section {
-            animation: fadeInAdmin 0.25s ease-out;
-        }
-
-        @keyframes fadeInAdmin {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
+            font-size: 1.1rem;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="header-top">
-            <h2 id="app-title">PharmaSys - <span id="header-pharmacy-name">Ventes Directes</span></h2>
-            <button id="btn-logout-ui" class="btn-logout" onclick="logoutApp()" style="display:none;">Déconnexion</button>
+        <div class="header-container">
+            <h1 id="app-title">PharmaSys - <span id="header-pharmacy-name">Sekas pharma</span></h1>
+            <div class="user-badge">
+                <span id="role-text" style="font-weight: 600; color: var(--primary-dark);">Veuillez vous connecter</span>
+                <button id="btn-logout-ui" onclick="logoutApp()" style="display:none; width:auto; padding:4px 8px; font-size:0.75rem; margin:4px 0 0 auto; background:var(--danger);">Déconnexion</button>
+            </div>
         </div>
-        <div class="role-indicator" id="role-text">Veuillez vous connecter</div>
     </header>
-    
-    <div id="login-screen" style="padding:20px; max-width: 400px; margin: 40px auto;" class="card">
-        <h3>Connexion Cloud Sécurisée</h3>
-        <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Entrez votre code secret pour accéder à la caisse.</p>
-        <div class="form-group">
-            <input id="login-code" type="password" placeholder="Code secret">
-        </div>
+
+    <!-- Écran d'authentification -->
+    <div id="login-screen">
+        <h2 class="login-title">🔒 Accès PharmaSys</h2>
+        <input type="password" id="login-code" placeholder="Saisir le code secret..." pattern="[0-9]*" inputmode="numeric" style="text-align: center; font-size: 1.25rem; letter-spacing: 2px;">
         <button onclick="loginApp()">Se connecter</button>
     </div>
 
-    <div class="container" style="display:none;">
-        
-        <div id="screen-assistant" class="screen active">
+    <!-- Conteneur principal de l'application -->
+    <div class="container">
+
+        <!-- FILTRE TEMPOREL GLOBAL AVEC BOUTON DE VALIDATION -->
+        <div class="date-range-bar">
+            <div>
+                <label>DATE DÉBUT</label>
+                <input type="date" id="date-debut">
+            </div>
+            <div>
+                <label>DATE FIN</label>
+                <input type="date" id="date-fin">
+            </div>
+            <button class="btn-filter-ok" onclick="chargerDonnees(true)">OK</button>
+        </div>
+
+        <!-- ==================== ÉCRAN ASSISTANT ==================== -->
+        <div id="screen-assistant" class="screen">
             <div class="card">
-                <h3>Enregistrer une Vente</h3>
-                <div class="form-group">
-                    <label for="ast-search">🔍 Rechercher le médicament</label>
-                    <input type="text" id="ast-search" placeholder="Tapez le nom pour chercher..." oninput="searchProduct(this.value, 'ast')">
+                <div class="card-title">🛒 Enregistrer une Vente</div>
+                <div class="search-container">
+                    <input type="text" id="ast-search" placeholder="Rechercher un médicament..." oninput="searchProduct(this.value, 'ast')">
                     <div id="ast-search-results" class="search-results"></div>
                 </div>
-                
-                <div id="ast-selected-area" style="display:none; background:#F0FDF4; padding:12px; border-radius:6px; margin-bottom:12px;">
-                    <p>👉 Sélectionné : <strong id="ast-selected-name" style="color:var(--primary-dark);">Aucun</strong></p>
-                    <small id="stock-hint" style="color: #4A5568; font-size: 0.85rem; display:block; margin-top:4px; font-weight: 500;"></small>
-                </div>
 
-                <div class="form-group">
-                    <label for="sale-qty">Quantité vendue (Qtes V)</label>
-                    <input type="number" id="sale-qty" min="0.01" step="any" value="1">
+                <!-- Zone produit sélectionné -->
+                <div id="ast-selected-area" style="display: none; background: var(--primary-light); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 4px;" id="ast-selected-name">-</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;" id="stock-hint">En stock : 0 | P.V.U : 0 Fc</div>
+                    
+                    <label style="font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 4px;">QUANTITÉ À VENDRE :</label>
+                    <input type="number" id="sale-qty" value="1" min="1" style="margin-bottom: 8px;">
+                    <button onclick="processSale()">Confirmer la vente</button>
+                    <button class="btn-secondary" onclick="document.getElementById('ast-selected-area').style.display='none'; selectedProductIdAst=null;">Annuler</button>
                 </div>
-                <button onclick="processSale()">Valider la vente</button>
             </div>
 
             <div class="card">
-                <h3>🗂️ Catalogue & Rentabilité Générale</h3>
-                <div class="form-group" style="margin-top: 10px;">
-                    <input type="text" id="filter-catalog-ast" placeholder="Filtrer le tableau instantanément..." oninput="filtrerCatalogueTableau(this.value)">
+                <div class="card-title">📊 Vos Ventes de la Période</div>
+                <input type="text" id="filter-bilan-ventes" placeholder="Rechercher dans le bilan..." oninput="renderBilanVentes()" style="padding: 6px 10px; font-size: 0.85rem; margin-bottom: 8px;">
+                <div id="listeBilanVentes" style="max-height: 250px; overflow-y: auto;">
+                    <!-- Rendu dynamique -->
                 </div>
-                <small id="ast-click-hint" style="color: #64748b; display: none; margin-bottom: 8px;">* En tant qu'admin, cliquez sur une ligne pour modifier/réapprovisionner.</small>
+            </div>
+
+            <div class="card">
+                <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>📋 Catalogue Complet des Médicaments</span>
+                </div>
+                <input type="text" id="filter-catalog-ast" placeholder="Filtrer la table par nom..." oninput="filtrerCatalogueTableau(this.value)" style="padding: 6px 10px; font-size: 0.85rem; margin-bottom: 8px;">
+                <p id="ast-click-hint" style="font-size:0.75rem; color:var(--accent-blue); margin-bottom:6px; font-weight:500; display:none;">💡 En tant qu'admin, cliquez sur une ligne pour modifier le produit directement.</p>
                 <div class="table-responsive">
-                    <table class="table-products">
+                    <table>
                         <thead>
                             <tr>
-                                <th style="width: 40px;">N°</th>
+                                <th>#</th>
                                 <th>Médicament</th>
                                 <th>Stock</th>
                                 <th>P.U.A</th>
-                                <th style="color:var(--accent-green);">P.A.Tot</th>
+                                <th>Val. Achat</th>
                                 <th>P.V.U</th>
-                                <th style="color:var(--accent-green);">P.V.Tot</th>
-                                <th style="color:var(--accent-blue);">Évol Stock</th>
-                                <th style="color:var(--accent-green);">Bénéf. J.</th>
-                                <th style="color:var(--primary-dark);">Contrôle</th>
+                                <th>Val. Vente</th>
+                                <th>Vendu Tot.</th>
+                                <th>Bénéfice</th>
+                                <th>Contrôle</th>
                             </tr>
                         </thead>
                         <tbody id="catalog-table-body-ast"></tbody>
@@ -468,164 +534,126 @@
                     </table>
                 </div>
                 <div class="pagination-container">
-                    <button class="btn-secondary" id="btn-prev-ast" onclick="changerPage(-1)">◀ Précédent</button>
-                    <span id="page-indicator-ast" style="font-size:0.85rem; font-weight:bold;">Page 1</span>
-                    <button class="btn-secondary" id="btn-next-ast" onclick="changerPage(1)">Suivant ▶</button>
-                </div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid var(--primary-dark);">
-                <h3>📊 Bilan Ventes Assistant (Période Sélectionnée)</h3>
-                <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
-                    <input type="text" id="filter-bilan-ventes" placeholder="Rechercher un produit dans le bilan..." oninput="renderBilanVentes()">
-                </div>
-                <div id="containerBilanVentes" style="max-height: 350px; overflow-y: auto; padding-right: 4px;">
-                    <div id="listeBilanVentes"></div>
+                    <button class="btn-secondary" onclick="changerPage(-1)">&larr; Précédent</button>
+                    <span id="page-indicator-ast" style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Page 1 / 1</span>
+                    <button class="btn-secondary" onclick="changerPage(1)">Suivant &rarr;</button>
                 </div>
             </div>
         </div>
 
+        <!-- ==================== ÉCRAN LOGS / MOUVEMENTS ==================== -->
         <div id="screen-mouvements" class="screen">
             <div class="card">
-                <h3>📜 Journal complet des mouvements</h3>
-                <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Historique des flux de stock pour la période sélectionnée.</p>
-                <div id="shared-liste-mouvements"></div>
+                <div class="card-title">🔄 Flux & Mouvements de Stock Chronologiques</div>
+                <div id="shared-liste-mouvements" style="max-height: 500px; overflow-y: auto;">
+                    <!-- Rendu dynamique -->
+                </div>
             </div>
         </div>
 
+        <!-- ==================== ÉCRAN ADMINISTRATEUR ==================== -->
         <div id="screen-admin" class="screen">
             
+            <!-- BOUTON RETOUR MENU GRILLE (Masqué par défaut) -->
+            <button id="btn-back-to-grid" class="btn-secondary" onclick="closeAdminSubSection()" style="display:none; margin-bottom: 16px; font-weight: bold;">&larr; Retour au Menu Admin</button>
+
+            <!-- MENU DE NAVIGATION EN GRILLE -->
             <div id="admin-main-menu-grid" class="admin-grid">
-                <div class="menu-card" onclick="openAdminSubSection('sub-admin-config')">
-                    <span class="menu-icon">⚙️</span>
-                    <h4>Configuration</h4>
-                    <p>Nom établissement, dates & réinitialisation</p>
+                <div class="menu-card" onclick="openAdminSubSection('sub-admin-logistique')">
+                    <span class="menu-card-icon">📦</span>
+                    <span class="menu-card-title">Stocks & Produits</span>
                 </div>
                 <div class="menu-card" onclick="openAdminSubSection('sub-admin-finances')">
-                    <span class="menu-icon">📊</span>
-                    <h4>Rapports & Finances</h4>
-                    <p>KPIs, Recettes, Catalogue complet & logs direct</p>
+                    <span class="menu-card-icon">💰</span>
+                    <span class="menu-card-title">Finances & Tops</span>
                 </div>
-                <div class="menu-card" onclick="openAdminSubSection('sub-admin-equipe')">
-                    <span class="menu-icon">👥</span>
-                    <h4>Gestion d'Équipe</h4>
-                    <p>Création, édition et blocage d'assistants</p>
+                <div class="menu-card" onclick="openAdminSubSection('sub-admin-personnel')">
+                    <span class="menu-card-icon">👥</span>
+                    <span class="menu-card-title">Gestion Personnel</span>
                 </div>
-                <div class="menu-card" onclick="openAdminSubSection('sub-admin-logistique')">
-                    <span class="menu-icon">📦</span>
-                    <h4>Stocks & Catalogue</h4>
-                    <p>Logs réapprovisionnements, ajouts, fiches & archives</p>
+                <div class="menu-card" onclick="openAdminSubSection('sub-admin-archives')">
+                    <span class="menu-card-icon">🗑️</span>
+                    <span class="menu-card-title">Archives Supprimés</span>
                 </div>
-            </div>
-
-            <button id="btn-back-to-grid" class="btn-back-admin" onclick="closeAdminSubSection()" style="display: none;">⬅️ Retour au Menu Admin</button>
-
-
-            <div id="sub-admin-config" class="admin-section" style="display: none;">
-                <div class="card" style="border-left: 4px solid var(--primary-light);">
-                    <h3>🏢 Configuration Établissement</h3>
-                    <div class="form-group" style="margin-top: 10px;">
-                        <label for="pharmacy-name-input">Modifier le nom de la pharmacie :</label>
-                        <div style="display: flex; gap: 8px; margin-top: 5px;">
-                            <input type="text" id="pharmacy-name-input" placeholder="Ex: Pharmacie de l'Unité">
-                            <button onclick="sauvegarderNomPharmacie()" style="width: auto; margin-top: 0; padding: 0 20px; background-color: var(--primary-light);">Enregistrer</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card" style="border-left: 4px solid var(--accent-blue);">
-                    <h3>📅 Consultation Historique & Clôture</h3>
-                    <!-- Insertion de votre sélecteur de période -->
-                    <div class="form-group">
-                        <label>🎯 Choisir la période d'analyse :</label>
-                        <div style="display: flex; gap: 10px; margin-top: 5px;">
-                            <div style="flex: 1;">
-                                <small style="color: #666;">Date de début :</small>
-                                <input type="date" id="date-debut" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            </div>
-                            <div style="flex: 1;">
-                                <small style="color: #666;">Date de fin :</small>
-                                <input type="date" id="date-fin" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn-danger" style="margin-top:10px; font-size:0.9rem;" onclick="reinitialiserVentesCloud()">🚨 Réinitialiser toutes les ventes à 0</button>
+                <div class="menu-card" onclick="openAdminSubSection('sub-admin-parametres')">
+                    <span class="menu-card-icon">⚙️</span>
+                    <span class="menu-card-title">Paramètres</span>
                 </div>
             </div>
 
+            <!-- SECTION SUB-ADMIN: LOGISTIQUE / STOCKS -->
+            <div id="sub-admin-logistique" class="admin-section">
+                <!-- Zone de Focus Modification / Réapprovisionnement -->
+                <div class="card" id="adm-focus-card" style="display: none; border-left: 4px solid var(--accent-blue);">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>⚙️ Gérer l'article : <span id="focus-nom" contenteditable="true" style="background:#fff; border-bottom:1px dashed #64748b; padding:0 4px;">-</span></span>
+                        <span id="focus-badge" class="badge ok">Stock Ok</span>
+                    </div>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin-top:-8px; margin-bottom:10px;">👉 Vous pouvez modifier le nom directement en cliquant dessus.</p>
+                    
+                    <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:12px; font-size:0.85rem;">
+                        Quantité actuelle en stock système : <strong><span id="focus-stock">0</span></strong> unités.
+                    </div>
 
-            <div id="sub-admin-finances" class="admin-section" style="display: none;">
-                <div class="kpi-container">
-                    <div class="kpi-card" style="border-left-color: var(--primary-dark);">
-                        <div class="kpi-title" id="title-recettes">Recettes Période</div>
-                        <div class="kpi-value" id="kpi-sales" style="color: var(--primary-dark);">0 Fc</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:bold;">Prix d'Achat (P.U.A) :</label>
+                            <input type="number" id="focus-input-pua">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:bold;">Prix de Vente (P.V.U) :</label>
+                            <input type="number" id="focus-input-pvu">
+                        </div>
                     </div>
-                    <div class="kpi-card" style="border-left-color: var(--accent-green);">
-                        <div class="kpi-title" id="title-benefices">Bénéfice Réel</div>
-                        <div class="kpi-value" style="color: var(--accent-green);" id="kpi-profit">0 Fc</div>
+
+                    <label style="font-size:0.8rem; font-weight:bold;">Date de Péremption :</label>
+                    <input type="date" id="focus-input-peremption" style="margin-bottom:12px;">
+
+                    <button onclick="modifierProduit()" style="background:var(--accent-blue);">💾 Enregistrer Caractéristiques</button>
+
+                    <div style="border-top:1px solid var(--border-color); margin:12px 0; padding-top:12px;">
+                        <label style="font-size:0.8rem; font-weight:bold; color:#b45309;">➕ AJOUTER DU STOCK (RÉAPPROVISIONNER) :</label>
+                        <input type="number" id="focus-input-reapp" placeholder="Quantité reçue à ajouter..." min="1">
+                        <button onclick="applyReapp()" style="background:#d97706;">Confirmer l'approvisionnement</button>
                     </div>
+
+                    <button class="btn-secondary" style="color:var(--danger); font-size:0.85rem; padding:6px;" onclick="archiverProduit()">🗑️ Archiver/Supprimer de la liste active</button>
                 </div>
 
                 <div class="card">
-                    <h3>Journal des Ventes de la période</h3>
-                    <div id="admin-sales-log" style="max-height: 400px; overflow-y: auto; padding-right: 4px;"></div>
-                </div>
-            </div>
-
-
-            <div id="sub-admin-equipe" class="admin-section" style="display: none;">
-                <div class="card" style="border-left: 4px solid var(--accent-blue);">
-                    <h3>👥 Gestion de l'Équipe (Assistants)</h3>
-                    <div style="background:#F8FAFC; padding:10px; border-radius:6px; margin-bottom:15px;">
-                        <h5>Créer / Modifier un utilisateur</h5>
-                        <input type="hidden" id="user-id-edit">
-                        <div class="form-group" style="margin-top:8px;">
-                            <input type="text" id="user-name" placeholder="Nom de l'assistant">
-                        </div>
-                        <div class="form-row">
-                            <div class="password-wrapper" style="position: relative; flex: 1;">
-                                <input type="password" id="user-code" placeholder="Code secret (4 chiffres)" style="width: 100%; padding-right: 35px;">
-                                <span id="toggle-user-code" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none; opacity: 0.6;">👁️</span>
-                            </div>
-                            
-                            <select id="user-role">
-                                <option value="assistant">Assistant</option>
-                                <option value="admin">Administrateur</option>
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <button class="btn-accent" style="margin-top:0;" onclick="saveUserCloud()">Sauvegarder</button>
-                            <button class="btn-secondary" style="margin-top:0;" onclick="clearUserForm()">Annuler</button>
-                        </div>
+                    <div class="card-title">➕ Ajouter un Nouveau Médicament</div>
+                    <input type="text" id="new-nom" placeholder="Nom du médicament (Ex: Paracétamol 500mg)...">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <input type="number" id="new-pua" placeholder="Prix d'Achat (Fc)" value="0">
+                        <input type="number" id="new-pvu" placeholder="Prix de Vente (Fc)" value="0">
                     </div>
-                    <h5>Liste du Personnel</h5>
-                    <div id="admin-users-list" style="margin-top:8px;"></div>
+                    <input type="number" id="new-stock" placeholder="Stock Initial (Quantité)" value="0">
+                    <button onclick="addNewProduct()">Créer et Enregistrer l'article</button>
                 </div>
-            </div>
 
-
-            <div id="sub-admin-logistique" class="admin-section" style="display: none;">
-                
-                <div class="card" id="admin-catalog-section">
-                    <h3>🗂️ Vue Catalogue & Rentabilité (A-Z)</h3>
-                    <div class="form-group" style="margin-top: 10px;">
-                        <input type="text" id="filter-catalog-adm" placeholder="Filtrer le catalogue..." oninput="filtrerCatalogueTableau(this.value)">
+                <div class="card">
+                    <div class="card-title">📝 Liste Interactive de l'Inventaire</div>
+                    <div class="search-container">
+                        <input type="text" id="adm-search" placeholder="Recherche rapide d'un produit pour modification..." oninput="searchProduct(this.value, 'adm')">
+                        <div id="adm-search-results" class="search-results"></div>
                     </div>
-                    <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Cliquez sur la ligne d'un médicament pour charger sa fiche technique ci-dessous.</p>
+                    
+                    <input type="text" id="filter-catalog-adm" placeholder="Filtrer le grand tableau par nom..." oninput="filtrerCatalogueTableau(this.value)" style="padding: 6px 10px; font-size: 0.85rem; margin-bottom: 8px;">
+                    
                     <div class="table-responsive">
-                        <table class="table-products">
+                        <table>
                             <thead>
                                 <tr>
-                                    <th style="width: 40px;">N°</th>
+                                    <th>#</th>
                                     <th>Médicament</th>
                                     <th>Stock</th>
                                     <th>P.U.A</th>
-                                    <th style="color:var(--accent-green);">P.A.Tot</th>
+                                    <th>Val. Achat</th>
                                     <th>P.V.U</th>
-                                    <th style="color:var(--accent-green);">P.V.Tot</th>
-                                    <th style="color:var(--accent-blue);">Évol Stock</th>
-                                    <th style="color:var(--accent-green);">Bénéf. P.</th>
-                                    <th style="color:var(--primary-dark);">Contrôle</th>
+                                    <th>Val. Vente</th>
+                                    <th>Vendu Tot.</th>
+                                    <th>Bénéfice</th>
+                                    <th>Contrôle</th>
                                 </tr>
                             </thead>
                             <tbody id="catalog-table-body-adm"></tbody>
@@ -633,99 +661,103 @@
                         </table>
                     </div>
                     <div class="pagination-container">
-                        <button class="btn-secondary" id="btn-prev-adm" onclick="changerPage(-1)">◀ Précédent</button>
-                        <span id="page-indicator-adm" style="font-size:0.85rem; font-weight:bold;">Page 1</span>
-                        <button class="btn-secondary" id="btn-next-adm" onclick="changerPage(1)">Suivant ▶</button>
-                    </div>
-                </div>
-
-                <div class="card" id="section-focus-modification" style="border-left: 4px solid var(--primary-dark);">
-                    <h3>Recherche Rapide & Mises à jour</h3>
-                    <div class="form-group">
-                        <label for="adm-search">🔎 Taper le nom du médicament à gérer</label>
-                        <input type="text" id="adm-search" placeholder="Chercher dans le catalogue..." oninput="searchProduct(this.value, 'adm')">
-                        <div id="adm-search-results" class="search-results"></div>
-                    </div>
-
-                    <div id="adm-focus-card" class="focused-product-card" style="display: none;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                            <h4 id="focus-nom" contenteditable="true" style="color: var(--primary-dark); font-size: 1.1rem; border-bottom: 1px dashed #CBD5E1;">-</h4>
-                            <span id="focus-badge" class="badge ok">Stock Ok</span>
-                        </div>
-                        
-                        <div style="font-size:0.85rem; background:white; padding:8px; border-radius:4px; margin-bottom:12px; border:1px solid #E2E8F0;">
-                            Disponible : <strong id="focus-stock" style="color:var(--primary-dark);">-</strong>
-                        </div>
-
-                        <h5 style="font-size:0.8rem; text-transform:uppercase; color:#64748b; margin-bottom:6px;">🛠️ Ajuster les prix (Francs Congolais)</h5>
-                        <div class="form-row">
-                            <div>
-                                <label style="font-size:0.75rem;">P.U.A (Achat)</label>
-                                <input type="number" step="any" id="focus-input-pua">
-                            </div>
-                            <div>
-                                <label style="font-size:0.75rem;">P.V.U (Vente)</label>
-                                <input type="number" step="any" id="focus-input-pvu">
-                            </div>
-                        </div>
-
-                        <div class="form-group" style="margin-top:10px;">
-                            <label style="font-size:0.8rem; font-weight:600; color:var(--text-dark);">Date d'expiration / Péremption</label>
-                            <input type="date" id="focus-input-peremption">
-                        </div>
-
-                        <h5 style="font-size:0.8rem; text-transform:uppercase; color:#A16207; margin-bottom:6px; margin-top:10px;">📦 Entrée de Stock (Réapprovisionnement)</h5>
-                        <div class="form-row" style="grid-template-columns: 2fr 1fr;">
-                            <input type="number" id="focus-input-reapp" min="0.01" step="any" placeholder="Quantité ajoutée">
-                            <button class="btn-secondary" style="padding:10px; margin-top:0;" onclick="applyReapp()">Ajouter</button>
-                        </div>
-
-                        <div class="form-row" style="margin-top: 15px;">
-                            <button class="btn-accent" style="margin-top:0;" onclick="modifierProduit()">💾 Enregistrer Modifs</button>
-                            <button class="btn-danger" style="margin-top:0;" onclick="archiverProduit()">📦 Archiver</button>
-                        </div>
+                        <button class="btn-secondary" onclick="changerPage(-1)">&larr; Précédent</button>
+                        <span id="page-indicator-adm" style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Page 1 / 1</span>
+                        <button class="btn-secondary" onclick="changerPage(1)">Suivant &rarr;</button>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3>Ajouter un médicament au catalogue</h3>
-                    <div class="form-group">
-                        <label for="new-nom">Nom du médicament</label>
-                        <input type="text" id="new-nom" placeholder="Nom commercial / Forme">
+                    <div class="card-title">🗃️ Historique des Réapprovisionnements</div>
+                    <div id="admin-reapp-log" style="max-height: 250px; overflow-y: auto;">
+                        <!-- Logs réappro -->
                     </div>
-                    <div class="form-row">
-                        <div>
-                            <label for="new-stock">Stock Initial</label>
-                            <input type="number" id="new-stock" min="0" step="any" value="0">
-                        </div>
-                        <div>
-                            <label for="new-pua">Prix d'Achat (P.U.A)</label>
-                            <input type="number" id="new-pua" step="any" value="0">
-                        </div>
+                </div>
+            </div>
+
+            <!-- SECTION SUB-ADMIN: FINANCES & STATS -->
+            <div id="sub-admin-finances" class="admin-section">
+                <!-- Chiffres KPIs Financiers de la période -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div class="card" style="margin-bottom:0; text-align:center; background:var(--primary-light);">
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--primary-dark);">CHIFFRE D'AFFAIRES (VALIDE)</div>
+                        <div id="kpi-sales" style="font-size:1.4rem; font-weight:800; color:var(--primary-dark);">0 Fc</div>
                     </div>
-                    <div class="form-group">
-                        <label for="new-pvu">Prix de Vente (P.V.U)</label>
-                        <input type="number" id="new-pvu" step="any" value="0">
+                    <div class="card" style="margin-bottom:0; text-align:center; background:#eff6ff;">
+                        <div style="font-size:0.75rem; font-weight:700; color:#1e40af;">BÉNÉFICE BRUT ESTIMÉ</div>
+                        <div id="kpi-profit" style="font-size:1.4rem; font-weight:800; color:#1e40af;">0 Fc</div>
                     </div>
-                    <div class="form-group" style="margin-bottom:15px;">
-                        <label for="new-peremption">Date d'expiration / Péremption</label>
-                        <input type="date" id="new-peremption">
-                    </div>
-                    <button class="btn-accent" onclick="addNewProduct()">Créer le Produit</button>
                 </div>
 
+                <!-- TOP 10 DES VENTES -->
+                <div class="card" style="border: 2px solid #10b981;">
+                    <div class="card-title" style="color:#047857; display:flex; align-items:center; gap:6px;">🏆 Top 10 des Médicaments les Plus Vendus</div>
+                    <div id="admin-top-10-liste">
+                        <!-- Rendu dynamique du Top 10 -->
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">🧾 Journal Central des Tickets de Ventes Cloud</div>
+                    <div id="admin-sales-log" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Rendu dynamique -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION SUB-ADMIN: PERSONNEL -->
+            <div id="sub-admin-personnel" class="admin-section">
+                <div class="card">
+                    <div class="card-title">👤 Configurer les Comptes du Personnel</div>
+                    <input type="hidden" id="user-id-edit">
+                    <input type="text" id="user-name" placeholder="Nom de l'agent (Ex: Jean-Pierre)...">
+                    
+                    <div class="input-group-pass">
+                        <input type="password" id="user-code" placeholder="Code secret de connexion (Chiffres/Lettres)...">
+                        <button type="button" id="toggle-user-code" class="toggle-pass-btn">👁️</button>
+                    </div>
+
+                    <label style="font-size:0.8rem; font-weight:bold;">Niveau d'autorisation (Rôle) :</label>
+                    <select id="user-role">
+                        <option value="assistant">Assistant Pharmacie</option>
+                        <option value="admin">Administrateur Général</option>
+                    </select>
+                    <button onclick="saveUserCloud()">Enregistrer l'agent</button>
+                    <button class="btn-secondary" onclick="clearUserForm()">Vider le formulaire</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">👥 Personnel Enregistré</div>
+                    <div id="admin-users-list">
+                        <!-- Liste dynamique -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION SUB-ADMIN: ARCHIVES -->
+            <div id="sub-admin-archives" class="admin-section">
+                <div class="card">
+                    <div class="card-title">🗑️ Corbeille des Articles Archivés</div>
+                    <input type="text" id="filter-archives" placeholder="Rechercher dans la corbeille..." oninput="renderArchives()" style="padding: 6px 10px; font-size: 0.85rem; margin-bottom: 8px;">
+                    <div id="listeArchives">
+                        <!-- Produits archivés -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION SUB-ADMIN: PARAMÈTRES -->
+            <div id="sub-admin-parametres" class="admin-section">
                 <div class="card" style="border-left: 4px solid var(--warning);">
-                    <h3>📦 Historique des Réapprovisionnements</h3>
-                    <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Suivi des entrées de stocks par produit.</p>
-                    <div id="admin-reapp-log" style="max-height: 250px; overflow-y: auto;"></div>
+                    <div class="card-title">🏢 Personnalisation de l'Officine</div>
+                    <label style="font-size: 0.8rem; font-weight: bold;">NOM DE LA PHARMACIE :</label>
+                    <input type="text" id="pharmacy-name-input" placeholder="Ex: Sekas pharma...">
+                    <button onclick="sauvegarderNomPharmacie()" style="background:var(--accent-blue);">Mettre à jour le nom</button>
                 </div>
 
-                <div class="card" style="border-left: 4px solid #64748b;">
-                    <h3>📦 Produits archivés</h3>
-                    <div class="form-group" style="margin-top: 10px; margin-bottom: 10px;">
-                        <input type="text" id="filter-archives" placeholder="Rechercher un produit archivé..." oninput="renderArchives()">
-                    </div>
-                    <div id="listeArchives" style="max-height: 280px; overflow-y: auto; padding-right: 4px;"></div>
+                <div class="card" style="border: 1px solid var(--danger); background: #fff5f5;">
+                    <div class="card-title" style="color: var(--danger);">⚠️ Zone de Danger Système</div>
+                    <p style="font-size: 0.8rem; color: #7f1d1d; margin-bottom: 12px;">Les actions suivantes vident de manière irréversible les journaux d'historique enregistrés sur le serveur Supabase distant.</p>
+                    <button onclick="reinitialiserVentesCloud()" style="background: var(--danger);">Réinitialiser l'historique des Ventes</button>
                 </div>
             </div>
 
@@ -733,21 +765,23 @@
 
     </div>
 
-    <div class="nav-bottom" style="display:none;" id="navigation-bar">
-        <div class="nav-item active" id="nav-assistant" onclick="switchScreen('assistant')">
-            <div class="nav-icon">🛒</div>
-            <div>Caisse Assistant</div>
-        </div>
-        <div class="nav-item" id="nav-mouvements" onclick="switchScreen('mouvements')">
-            <div class="nav-icon">📜</div>
-            <div>Mouvements</div>
-        </div>
-        <div class="nav-item" id="tab-admin-nav" style="display:none;" onclick="switchScreen('admin')">
-            <div class="nav-icon">📊</div>
-            <div>Espace Admin</div>
-        </div>
-    </div>
+    <!-- Barre de Navigation Basse Mobile-First -->
+    <nav id="navigation-bar">
+        <button class="nav-item" id="nav-assistant" onclick="switchScreen('assistant')">
+            <span class="nav-icon">🛒</span>
+            <span>Ventes & Catalogue</span>
+        </button>
+        <button class="nav-item" id="nav-mouvements" onclick="switchScreen('mouvements')">
+            <span class="nav-icon">🔄</span>
+            <span>Flux Mouvements</span>
+        </button>
+        <button class="nav-item" id="tab-admin-nav" onclick="switchScreen('admin')">
+            <span class="nav-icon">🛡️</span>
+            <span>Espace Admin</span>
+        </button>
+    </nav>
 
+    <!-- CODE SCRIPT PRINCIPAL -->
     <script>
         const SUPABASE_URL = "https://ormkaxagjgfexdzhmvvf.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybWtheGFnamdmZXhkemhtdnZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2OTQ0MTcsImV4cCI6MjA5ODI3MDQxN30.xHAGzAUYWNCS8YIf0BVLUv2Ei_PLJqlTxeXJL_nq9e0";
@@ -755,6 +789,7 @@
 
         let inventaire = [];
         let historiqueVentes = [];
+        let historiqueVentesTop10 = []; // Tableau séparé dédié uniquement au Top 10
         let mouvementsStock = [];
         let listeUtilisateurs = [];
         
@@ -775,6 +810,11 @@
             
             document.getElementById(sectionId).style.display = 'block';
             document.getElementById('btn-back-to-grid').style.display = 'block';
+            
+            if (sectionId === 'sub-admin-finances') {
+                renderTop10Ventes();
+                renderAdminScreen();
+            }
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -828,42 +868,67 @@
             }
         }
 
-        // Nouvelle structure optimisée fusionnée avec vos critères de filtrage par période gte/lte
-        async function chargerDonnees() {
+        async function fetchAllRows(tableName, selectQuery, gteColumn, gteVal, lteColumn, lteVal) {
+            let allData = [];
+            let from = 0;
+            let to = 999;
+            let hasMore = true;
+
+            while (hasMore) {
+                let query = dbCloud.from(tableName).select(selectQuery).range(from, to);
+                if (gteColumn && gteVal) query = query.gte(gteColumn, gteVal);
+                if (lteColumn && lteVal) query = query.lte(lteColumn, lteVal);
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    allData = allData.concat(data);
+                    from += 1000;
+                    to += 1000;
+                    if (data.length < 1000) hasMore = false;
+                } else {
+                    hasMore = false;
+                }
+            }
+            return allData;
+        }
+
+        async function chargerDonnees(estFiltreExplicite = false) {
             const dateDebut = document.getElementById('date-debut').value;
             const dateFin = document.getElementById('date-fin').value;
 
             if (!dateDebut || !dateFin) return;
 
             try {
-                // Charge d'abord l'inventaire complet et les utilisateurs (nécessaires au reste de l'application)
                 const { data: inv } = await dbCloud.from('inventaire').select('*').order('nom', { ascending: true });
                 const { data: users } = await dbCloud.from('utilisateurs').select('*').order('nom', { ascending: true });
                 
                 if (inv) inventaire = inv;
                 if (users) listeUtilisateurs = users;
 
-                // 1. Récupération des ventes pour la période donnée
-                const { data: ventes, error: errVentes } = await dbCloud
-                    .from('historique_ventes')
-                    .select('*')
-                    .gte('date', dateDebut)
-                    .lte('date', dateFin);
+                // Chargement des mouvements et journaux (suit les sélecteurs de date)
+                historiqueVentes = await fetchAllRows('historique_ventes', '*', 'date', dateDebut, 'date', dateFin);
+                mouvementsStock = await fetchAllRows('mouvements_stock', '*', 'created_at', dateDebut + "T00:00:00", 'created_at', dateFin + "T23:59:59");
 
-                if (errVentes) throw errVentes;
-                historiqueVentes = ventes || [];
+                // Gestion de la logique isolée du Top 10
+                let dateDebutTop10 = dateDebut;
+                let dateFinTop10 = dateFin;
 
-                // 2. Récupération des mouvements de stock pour la même période
-                const { data: mouvements, error: errMouv } = await dbCloud
-                    .from('mouvements_stock')
-                    .select('*')
-                    .gte('created_at', dateDebut + "T00:00:00") // Adaptation sécurisée pour ISOString
-                    .lte('created_at', dateFin + "T23:59:59");
+                if (!estFiltreExplicite) {
+                    // Par défaut, le Top 10 prend tout le mois en cours (du 1er au jour actuel)
+                    const maintenant = new Date();
+                    const annee = maintenant.getFullYear();
+                    const mois = String(maintenant.getMonth() + 1).padStart(2, '0');
+                    dateDebutTop10 = `${annee}-${mois}-01`;
+                    
+                    const offset = maintenant.getTimezoneOffset();
+                    dateFinTop10 = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
+                }
 
-                if (errMouv) throw errMouv;
-                mouvementsStock = mouvements || [];
+                // Récupération des lignes serveur spécifiques pour le Top 10
+                historiqueVentesTop10 = await fetchAllRows('historique_ventes', '*', 'date', dateDebutTop10, 'date', dateFinTop10);
 
-                // --- CALCUL DES RECETTES ET BÉNÉFICES SUR LA PÉRIODE ---
                 totalVentesFc = 0;
                 totalProfitFc = 0;
 
@@ -874,7 +939,6 @@
                     totalProfitFc += nombre(vente.profit); 
                 });
 
-                // 3. Mise à jour de l'affichage des compteurs 
                 if(document.getElementById('kpi-sales')) {
                     document.getElementById('kpi-sales').innerText = `${totalVentesFc.toFixed(2).replace('.00', '')} Fc`;
                 }
@@ -882,7 +946,6 @@
                     document.getElementById('kpi-profit').innerText = `${totalProfitFc.toFixed(2).replace('.00', '')} Fc`;
                 }
 
-                // 4. Actualisation des interfaces graphiques
                 refreshUI();
 
             } catch (error) {
@@ -899,6 +962,7 @@
             try { renderArchives(); } catch(e) { console.error(e); }
             try { chargerNomPharmacie(); } catch(e) { console.error(e); }
             try { renderMouvements(); } catch(e) { console.error(e); }
+            try { renderTop10Ventes(); } catch(e) { console.error(e); }
         }
 
         async function loginApp() {
@@ -952,7 +1016,7 @@
         }
 
         function extraireDateCible() {
-            let dateCible = document.getElementById("date-debut")?.value;
+            let dateCible = document.getElementById("date-fin")?.value;
             if (!dateCible) {
                 const maintenant = new Date();
                 const offset = maintenant.getTimezoneOffset();
@@ -1013,7 +1077,7 @@
             const role = document.getElementById("user-role").value;
 
             if(!nom || !code) { 
-                alert("Veuillez remplir le nom et le code secret."); 
+                alert("Veuillez remplir le nom and le code secret."); 
                 return; 
             }
             
@@ -1085,7 +1149,7 @@
                 const codeMasque = "****"; 
 
                 container.innerHTML += `
-                    <div class="list-item" style="font-size:0.85rem; background:#f1f5f9; padding:8px; margin-bottom:5px; border-radius:6px; display:flex; justify-content:between; align-items:center;">
+                    <div class="list-item" style="font-size:0.85rem; background:#f1f5f9; padding:8px; margin-bottom:5px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <strong>${u.nom}</strong> (${u.role.toUpperCase()}) <br>
                             <small style="color:#64748b;">Code: ${codeMasque} | Statut: ${statusLabel}</small>
@@ -1105,7 +1169,6 @@
             if(!container) return;
             container.innerHTML = "";
 
-            // Filtre les réappro enregistrés dans le tableau local mouvementsStock (déjà filtré par période)
             const reapps = mouvementsStock.filter(m => m.type === "REAPPRO");
             
             if(reapps.length === 0) {
@@ -1155,7 +1218,8 @@
 
             let listeFiltree = inventaire.filter(p => p.actif !== false);
             if (filtreTexteTableau !== "") {
-                listeFiltree = listeFiltree.filter(p => p.nom.toLowerCase().includes(filtreTexteTableau));
+                let s = filtreTexteTableau.toLowerCase();
+                listeFiltree = listeFiltree.filter(p => p.nom && p.nom.toLowerCase().includes(s));
             }
 
             let sommePua = 0;
@@ -1252,7 +1316,7 @@
                     tr.innerHTML = trContent;
                     if (utilisateurConnecte && utilisateurConnecte.role === 'admin') {
                         tr.style.cursor = "pointer";
-                        tr.onclick = () => { switchScreen('admin'); openAdminSubSection('sub-admin-logistique'); selectProduct(p.id, 'adm'); document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' }); };
+                        tr.onclick = () => { switchScreen('admin'); openAdminSubSection('sub-admin-logistique'); selectProduct(p.id, 'adm'); };
                     }
                     tbodyAst.appendChild(tr);
                 }
@@ -1262,7 +1326,7 @@
                     tr.className = "clickable-row";
                     tr.style.cursor = "pointer";
                     tr.innerHTML = trContent;
-                    tr.onclick = () => { selectProduct(p.id, 'adm'); document.getElementById("section-focus-modification").scrollIntoView({ behavior: 'smooth' }); };
+                    tr.onclick = () => { selectProduct(p.id, 'adm'); };
                     tbodyAdm.appendChild(tr);
                 }
                 compteurLigne++;
@@ -1286,12 +1350,12 @@
         }
 
         async function lancerControleInventaire(produitId) {
-            const produit = inventaire.find(p => p.id === produitId);
-            if (!produit) return;
+            const producto = inventaire.find(p => p.id === produitId);
+            if (!producto) return;
 
-            const stockTheorique = nombre(produit.stock);
+            const stockTheorique = nombre(producto.stock);
             
-            const saisie = prompt(`📦 CONTRÔLE D'INVENTAIRE - ${produit.nom}\n\nStock système actuel : ${stockTheorique} unités.\nCombien de boîtes/unités comptez-vous réellement sur l'étagère ?`);
+            const saisie = prompt(`📦 CONTRÔLE D'INVENTAIRE - ${producto.nom}\n\nStock système actuel : ${stockTheorique} unités.\nCombien de boîtes/unités comptez-vous réellement sur l'étagère ?`);
             
             if (saisie === null || saisie.trim() === "") return; 
             
@@ -1319,13 +1383,13 @@
                 const { error: errInv } = await dbCloud.from('inventaire').update({ 
                     stock: stockPhysique,
                     dernier_controle: dateAujourdhui
-                }).eq('id', produit.id);
+                }).eq('id', producto.id);
 
                 if (errInv) throw errInv;
 
-                await enregistrerMouvementCloud("AJUSTEMENT", produit, Math.abs(difference), stockTheorique, stockPhysique, observation);
+                await enregistrerMouvementCloud("AJUSTEMENT", producto, Math.abs(difference), stockTheorique, stockPhysique, observation);
 
-                alert(`✅ Inventaire enregistré pour ${produit.nom} !\nNouveau stock fixé à : ${stockPhysique}\nRésultat : ${observation}`);
+                alert(`✅ Inventaire enregistré pour ${producto.nom} !\nNouveau stock fixé à : ${stockPhysique}\nRésultat : ${observation}`);
                 
                 await chargerDonnees();
 
@@ -1334,13 +1398,12 @@
             }
         }
 
-
         function searchProduct(query, mode) {
             const resultsDiv = document.getElementById(`${mode}-search-results`);
             if (!query.trim()) { resultsDiv.style.display = 'none'; return; }
 
             const cleanQuery = query.toLowerCase();
-            const filtered = inventaire.filter(p => p.actif !== false && p.nom.toLowerCase().includes(cleanQuery)).slice(0, 5);
+            const filtered = inventaire.filter(p => p.actif !== false && p.nom && p.nom.toLowerCase().includes(cleanQuery)).slice(0, 5);
 
             if (filtered.length === 0) {
                 resultsDiv.innerHTML = '<div style="padding:10px; color:#718096;">Aucun produit trouvé</div>';
@@ -1364,6 +1427,7 @@
             if (resultsDiv) resultsDiv.style.display = 'none';
             document.getElementById(`${mode}-search`).value = '';
             const produit = inventaire.find(p => p.id === id);
+            if (!produit) return;
 
             if (mode === 'ast') {
                 selectedProductIdAst = id;
@@ -1415,7 +1479,7 @@
             const qty = nombre(document.getElementById("sale-qty").value);
             const produit = inventaire.find(p => p.id == selectedProductIdAst);
 
-            if (isNaN(qty) || qty <= 0 || qty > nombre(produit.stock)) { alert("Quantité incorrecte ou stock insuffisant."); return; }
+            if (!produit || isNaN(qty) || qty <= 0 || qty > nombre(produit.stock)) { alert("Quantité incorrecte ou stock insuffisant."); return; }
 
             const idVente = "V" + Date.now().toString().slice(-6);
             const avant = nombre(produit.stock);
@@ -1437,7 +1501,7 @@
                 id: idVente,
                 date: dateLocale, 
                 heure: heureLocale, 
-                assistant: utilisateurConnecte.nom,
+                assistant: v.assistant ? v.assistant : utilisateurConnecte.nom,
                 assistant_id: utilisateurConnecte.id,
                 produit_id: produit.id,
                 nom: produit.nom,
@@ -1478,7 +1542,7 @@
             const qty = nombre(document.getElementById('focus-input-reapp').value);
             const produit = inventaire.find(p => p.id === selectedProductIdAdm);
 
-            if (isNaN(qty) || qty <= 0) return;
+            if (!produit || isNaN(qty) || qty <= 0) return;
             const avant = nombre(produit.stock);
             const apres = nombre((avant + qty).toFixed(2)); 
 
@@ -1569,7 +1633,7 @@
                     .reduce((s,v) => s + nombre(v.quantite || 0), 0); 
 
                 if(totalVenduProd > 0) {
-                    if (filtreTexte !== "" && !p.nom.toLowerCase().includes(filtreTexte)) {
+                    if (filtreTexte !== "" && p.nom && !p.nom.toLowerCase().includes(filtreTexte)) {
                         return; 
                     }
                     
@@ -1592,6 +1656,65 @@
             if (!aDesVentes) {
                 div.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem; padding:10px;">Aucune vente à afficher.</p>';
             }
+        }
+
+        function renderTop10Ventes() {
+            const container = document.getElementById("admin-top-10-liste");
+            if (!container) return;
+            container.innerHTML = "";
+
+            // Utilise le tableau isolé historiqueVentesTop10 au lieu du global journalier
+            const ventesValides = historiqueVentesTop10.filter(v => v.statut === "VALIDE");
+
+            const cumulVentes = {};
+            ventesValides.forEach(v => {
+                if (!cumulVentes[v.produit_id]) {
+                    cumulVentes[v.produit_id] = {
+                        nom: v.nom,
+                        quantiteTotale: 0
+                    };
+                }
+                cumulVentes[v.produit_id].quantiteTotale += nombre(v.quantite);
+            });
+
+            const tableauTrie = Object.keys(cumulVentes).map(id => {
+                const produitInventaire = inventaire.find(p => p.id == id);
+                const stockActuel = produitInventaire ? nombre(produitInventaire.stock) : 0;
+
+                return {
+                    id: id,
+                    nom: cumulVentes[id].nom,
+                    quantiteTotale: cumulVentes[id].quantiteTotale,
+                    stockActuel: stockActuel
+                };
+            }).sort((a, b) => b.quantiteTotale - a.quantiteTotale);
+
+            const top10 = tableauTrie.slice(0, 10);
+
+            if (top10.length === 0) {
+                container.innerHTML = '<p style="color:#718096; text-align:center; font-size:0.85rem; padding:10px;">Aucune vente enregistrée sur cette période pour générer le Top 10.</p>';
+                return;
+            }
+
+            top10.forEach((item, index) => {
+                const rang = index + 1;
+                const badgeStockClass = item.stockActuel <= 2 ? 'badge alert' : 'badge ok';
+
+                container.innerHTML += `
+                    <div class="list-item" style="font-size:0.9rem; padding:10px 8px; border-bottom:1px solid #edf2f7; display:flex; justify-content:between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-weight:bold; color:var(--primary-dark); background:#eaf7f2; padding:4px 8px; border-radius:50%; min-width:20px; text-align:center;">${rang}</span>
+                            <div>
+                                <strong>${item.nom}</strong>
+                            </div>
+                        </div>
+                        <div style="text-align: right; font-size:0.85rem; color:#4a5568;">
+                            <span style="margin-right:10px;">Quantité vendue : <strong style="color:var(--accent-blue); font-size:0.95rem;">${item.quantiteTotale}</strong></span>
+                            <span>Stock actuel : <span class="${badgeStockClass}">${item.stockActuel}</span></span>
+                        </div>
+                    </div>
+                `;
+            });
         }
 
         function renderMouvements() {
@@ -1631,13 +1754,13 @@
             if (!div) return;
             div.innerHTML = "";
             
-            const filtreInput = document.getElementById("filter-archives");
-            const filtreTexte = filtreInput ? filtreInput.value.toLowerCase().trim() : "";
+            const fontInput = document.getElementById("filter-archives");
+            const filtreTexte = fontInput ? fontInput.value.toLowerCase().trim() : "";
             
             let archives = inventaire.filter(p => p.actif === false);
             
             if (filtreTexte !== "") {
-                archives = archives.filter(p => p.nom.toLowerCase().includes(filtreTexte));
+                archives = archives.filter(p => p.nom && p.nom.toLowerCase().includes(filtreTexte));
             }
 
             if (archives.length === 0) { 
@@ -1729,6 +1852,7 @@
                 
                 renderAdminScreen();
                 renderAlphabeticalCatalog();
+                renderTop10Ventes();
             }
         }
 
@@ -1736,7 +1860,6 @@
             localStorage.removeItem("pharma_user"); 
             chargerNomPharmacie(); 
             
-            // Initialisation de la période sur le jour actuel
             const inputDebut = document.getElementById('date-debut');
             const inputFin = document.getElementById('date-fin');
 
@@ -1745,12 +1868,9 @@
                 const offset = maintenant.getTimezoneOffset();
                 const aujourdhui = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
                 
+                // Par défaut, le filtre affiche uniquement la journée actuelle pour les journaux et mouvements
                 inputDebut.value = aujourdhui;
                 inputFin.value = aujourdhui;
-
-                // Ajout des écouteurs de changements
-                inputDebut.addEventListener('change', chargerDonnees);
-                inputFin.addEventListener('change', chargerDonnees);
             }
 
             const sessionActive = localStorage.getItem("pharma_user_session");
@@ -1774,9 +1894,8 @@
                         document.getElementById("ast-click-hint").style.display = "none";
                     }
                     
-                    switchScreen(utilisateurConnecte.role === 'admin' ? 'admin' : 'assistant');
-                    
-                    await chargerDonnees();
+                    await chargerDonnees(); // Charge les données initiales (journalières globales, mensuelles pour le Top 10)
+                    switchScreen(utilisateurConnecte.role === 'admin' ? 'admin' : 'assistant'); 
                 } catch(e) {
                     console.error("Échec de restauration de session", e);
                 }
