@@ -584,11 +584,11 @@
             <!-- SECTION SUB-ADMIN: LOGISTIQUE / STOCKS -->
             <div id="sub-admin-logistique" class="admin-section">
                 
-                <!-- MODULE DES ALERTES RUPTURES DE STOCK (Nouveau !) -->
+                <!-- MODULE DES ALERTES RUPTURES DE STOCK DISTRIBUÉES -->
                 <div class="card" style="border: 2px solid var(--danger); background: #fef2f2;">
                     <div class="card-title" style="color: #991b1b; border-bottom-color: #fee2e2;">⚠️ Alertes Ruptures (Stock restant &le; 2)</div>
                     <div id="admin-ruptures-liste" style="max-height: 180px; overflow-y: auto;">
-                        <!-- Rendu dynamique des stocks critiques -->
+                        <!-- Rendu dynamique cloud synchronisé (0, 1 ou 2 unités) -->
                     </div>
                 </div>
 
@@ -618,7 +618,9 @@
                     <label style="font-size:0.8rem; font-weight:bold;">Date de Péremption :</label>
                     <input type="date" id="focus-input-peremption" style="margin-bottom:12px;">
 
-                    <button onclick="modifierProduit()" style="background:var(--accent-blue);">💾 Enregistrer Caractéristiques</button>
+                    <button onclick="modifierProduit()" style="background:var(--accent-blue); margin-bottom: 8px;">💾 Enregistrer Caractéristiques</button>
+                    <!-- BOUTON DE CONTRÔLE AJOUTÉ DANS LE MENU DE MODIFICATION -->
+                    <button onclick="lancerControleInventaire(selectedProductIdAdm)" style="background:var(--success); margin-bottom: 12px;">🔍 Lancer un Contrôle d'Inventaire</button>
 
                     <div style="border-top:1px solid var(--border-color); margin:12px 0; padding-top:12px;">
                         <label style="font-size:0.8rem; font-weight:bold; color:#b45309;">➕ AJOUTER DU STOCK (RÉAPPROVISIONNER) :</label>
@@ -1201,7 +1203,7 @@
             });
         }
 
-        // FONCTION DE RENDU DYNAMIQUE POUR LES PRODUITS ÉPUISÉS OU TRÈS BAS (NOUVEAU)
+        // FONCTION DE RENDU DYNAMIQUE POUR LES PRODUITS ÉPUISÉS OU TRÈS BAS (SUPABASE SYNCHRONISÉ)
         function renderRupturesStock() {
             const container = document.getElementById("admin-ruptures-liste");
             if (!container) return;
@@ -1551,7 +1553,7 @@
                 id: idVente,
                 date: dateLocale, 
                 heure: heureLocale, 
-                assistant: utilisateurConnecte.nom,
+                assistant: manuscript = utilisateurConnecte.nom,
                 assistant_id: utilisateurConnecte.id,
                 produit_id: produit.id,
                 nom: produit.nom,
@@ -1776,7 +1778,10 @@
                 return; 
             }
 
-            mouvementsStock.forEach(m => {
+            // CORRECTION : Tri automatique des mouvements par ordre décroissant (du plus récent au plus ancien)
+            const mouvementsTries = [...mouvementsStock].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            mouvementsTries.forEach(m => {
                 let badgeStyle = "background: #cbd5e1; color: #1e293b;";
                 let label = m.type;
                 if (m.type === "VENTE") { badgeStyle = "background: #d1fae5; color: #065f46;"; label = "🟢 VENTE"; }
