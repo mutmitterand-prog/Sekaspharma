@@ -583,6 +583,15 @@
 
             <!-- SECTION SUB-ADMIN: LOGISTIQUE / STOCKS -->
             <div id="sub-admin-logistique" class="admin-section">
+                
+                <!-- MODULE DES ALERTES RUPTURES DE STOCK (Nouveau !) -->
+                <div class="card" style="border: 2px solid var(--danger); background: #fef2f2;">
+                    <div class="card-title" style="color: #991b1b; border-bottom-color: #fee2e2;">⚠️ Alertes Ruptures (Stock restant &le; 2)</div>
+                    <div id="admin-ruptures-liste" style="max-height: 180px; overflow-y: auto;">
+                        <!-- Rendu dynamique des stocks critiques -->
+                    </div>
+                </div>
+
                 <!-- Zone de Focus Modification / Réapprovisionnement -->
                 <div class="card" id="adm-focus-card" style="display: none; border-left: 4px solid var(--accent-blue);">
                     <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
@@ -748,7 +757,7 @@
             <!-- SECTION SUB-ADMIN: PARAMÈTRES -->
             <div id="sub-admin-parametres" class="admin-section">
                 <div class="card" style="border-left: 4px solid var(--warning);">
-                    <div class="card-title">🏢 Personnalisation de l'Officine</div>
+                    <div class="card-title" style="color: var(--warning);">🏢 Personnalisation de l'Officine</div>
                     <label style="font-size: 0.8rem; font-weight: bold;">NOM DE LA PHARMACIE :</label>
                     <input type="text" id="pharmacy-name-input" placeholder="Ex: Sekas pharma...">
                     <button onclick="sauvegarderNomPharmacie()" style="background:var(--accent-blue);">Mettre à jour le nom</button>
@@ -789,7 +798,7 @@
 
         let inventaire = [];
         let historiqueVentes = [];
-        let historiqueVentesTop10 = []; // Tableau séparé dédié uniquement au Top 10
+        let historiqueVentesTop10 = []; 
         let mouvementsStock = [];
         let listeUtilisateurs = [];
         
@@ -814,6 +823,8 @@
             if (sectionId === 'sub-admin-finances') {
                 renderTop10Ventes();
                 renderAdminScreen();
+            } else if (sectionId === 'sub-admin-logistique') {
+                renderRupturesStock();
             }
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -907,16 +918,13 @@
                 if (inv) inventaire = inv;
                 if (users) listeUtilisateurs = users;
 
-                // Chargement des mouvements et journaux (suit les sélecteurs de date)
                 historiqueVentes = await fetchAllRows('historique_ventes', '*', 'date', dateDebut, 'date', dateFin);
                 mouvementsStock = await fetchAllRows('mouvements_stock', '*', 'created_at', dateDebut + "T00:00:00", 'created_at', dateFin + "T23:59:59");
 
-                // Gestion de la logique isolée du Top 10
                 let dateDebutTop10 = dateDebut;
                 let dateFinTop10 = dateFin;
 
                 if (!estFiltreExplicite) {
-                    // Par défaut, le Top 10 prend tout le mois en cours (du 1er au jour actuel)
                     const maintenant = new Date();
                     const annee = maintenant.getFullYear();
                     const mois = String(maintenant.getMonth() + 1).padStart(2, '0');
@@ -926,7 +934,6 @@
                     dateFinTop10 = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
                 }
 
-                // Récupération des lignes serveur spécifiques pour le Top 10
                 historiqueVentesTop10 = await fetchAllRows('historique_ventes', '*', 'date', dateDebutTop10, 'date', dateFinTop10);
 
                 totalVentesFc = 0;
@@ -963,6 +970,7 @@
             try { chargerNomPharmacie(); } catch(e) { console.error(e); }
             try { renderMouvements(); } catch(e) { console.error(e); }
             try { renderTop10Ventes(); } catch(e) { console.error(e); }
+            try { renderRupturesStock(); } catch(e) { console.error(e); }
         }
 
         async function loginApp() {
@@ -1188,6 +1196,42 @@
                             <span style="color:#b45309; font-weight:bold;">+ ${parseFloat(r.quantite)} u.</span> <br>
                             <small style="color:#64748b;">Total: ${parseFloat(r.stock_apres)}</small>
                         </div>
+                    </div>
+                `;
+            });
+        }
+
+        // FONCTION DE RENDU DYNAMIQUE POUR LES PRODUITS ÉPUISÉS OU TRÈS BAS (NOUVEAU)
+        function renderRupturesStock() {
+            const container = document.getElementById("admin-ruptures-liste");
+            if (!container) return;
+            container.innerHTML = "";
+
+            // Filtrer uniquement les articles actifs dont la quantité est comprise entre 0 et 2
+            const articlesCritiques = inventaire.filter(p => p.actif !== false && nombre(p.stock) <= 2);
+
+            if (articlesCritiques.length === 0) {
+                container.innerHTML = `<p style="color:#047857; font-size:0.85rem; text-align:center; padding:10px; font-weight:500;">✅ Magnifique ! Aucun médicament n'est en rupture de stock.</p>`;
+                return;
+            }
+
+            articlesCritiques.forEach(p => {
+                const qte = nombre(p.stock);
+                let badgeText = "";
+                let badgeStyle = "";
+
+                if (qte === 0) {
+                    badgeText = "ÉPUISÉ";
+                    badgeStyle = "background: #7f1d1d; color: #ffffff;";
+                } else {
+                    badgeText = `${qte} restant${qte > 1 ? 's' : ''}`;
+                    badgeStyle = "background: #b45309; color: #ffffff;";
+                }
+
+                container.innerHTML += `
+                    <div class="list-item" style="font-size:0.85rem; background:#ffffff; border-left:4px solid ${qte === 0 ? 'var(--danger)' : 'var(--warning)'}; padding:8px 12px; margin-bottom:5px; border-radius:4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor:pointer;" onclick="selectProduct(${p.id}, 'adm')">
+                        <div style="font-weight: 600; color: var(--text-main);">${p.nom}</div>
+                        <span class="badge" style="${badgeStyle}">${badgeText}</span>
                     </div>
                 `;
             });
@@ -1425,7 +1469,10 @@
         function selectProduct(id, mode) {
             const resultsDiv = document.getElementById(`${mode}-search-results`);
             if (resultsDiv) resultsDiv.style.display = 'none';
-            document.getElementById(`${mode}-search`).value = '';
+            
+            const searchInput = document.getElementById(`${mode}-search`);
+            if (searchInput) searchInput.value = '';
+
             const produit = inventaire.find(p => p.id === id);
             if (!produit) return;
 
@@ -1444,6 +1491,9 @@
             } else if (mode === 'adm') {
                 selectedProductIdAdm = id;
                 showAdminFocusCard(produit);
+                
+                // Défilement fluide vers la carte de focus pour que l'admin voie instantanément le produit cliqué
+                document.getElementById('adm-focus-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
 
@@ -1501,7 +1551,7 @@
                 id: idVente,
                 date: dateLocale, 
                 heure: heureLocale, 
-                assistant: v.assistant ? v.assistant : utilisateurConnecte.nom,
+                assistant: utilisateurConnecte.nom,
                 assistant_id: utilisateurConnecte.id,
                 produit_id: produit.id,
                 nom: produit.nom,
@@ -1663,7 +1713,6 @@
             if (!container) return;
             container.innerHTML = "";
 
-            // Utilise le tableau isolé historiqueVentesTop10 au lieu du global journalier
             const ventesValides = historiqueVentesTop10.filter(v => v.statut === "VALIDE");
 
             const cumulVentes = {};
@@ -1853,6 +1902,7 @@
                 renderAdminScreen();
                 renderAlphabeticalCatalog();
                 renderTop10Ventes();
+                renderRupturesStock();
             }
         }
 
@@ -1868,7 +1918,6 @@
                 const offset = maintenant.getTimezoneOffset();
                 const aujourdhui = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
                 
-                // Par défaut, le filtre affiche uniquement la journée actuelle pour les journaux et mouvements
                 inputDebut.value = aujourdhui;
                 inputFin.value = aujourdhui;
             }
@@ -1894,7 +1943,7 @@
                         document.getElementById("ast-click-hint").style.display = "none";
                     }
                     
-                    await chargerDonnees(); // Charge les données initiales (journalières globales, mensuelles pour le Top 10)
+                    await chargerDonnees(); 
                     switchScreen(utilisateurConnecte.role === 'admin' ? 'admin' : 'assistant'); 
                 } catch(e) {
                     console.error("Échec de restauration de session", e);
