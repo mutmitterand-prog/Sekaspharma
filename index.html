@@ -648,7 +648,9 @@
 
                     <button onclick="modifierProduit()" style="background:var(--accent-blue); margin-bottom: 8px;">💾 Enregistrer Caractéristiques</button>
                     <!-- BOUTON DE CONTRÔLE AJOUTÉ DANS LE MENU DE MODIFICATION -->
-                    <button onclick="lancerControleInventaire(selectedProductIdAdm)" style="background:var(--success); margin-bottom: 12px;">🔍 Lancer un Contrôle d'Inventaire</button>
+                    <button onclick="lancerControleInventaire(selectedProductIdAdm)" style="background:var(--success); margin-bottom: 8px;">🔍 Lancer un Contrôle d'Inventaire</button>
+                    <!-- NOUVEAU BOUTON : SUIVI HISTORIQUE DU STOCK -->
+                    <button onclick="const p = inventaire.find(prod => prod.id === selectedProductIdAdm); if(p) { afficherSuiviStockMedicament(p.id, p.nom); }" style="background:var(--accent-blue); color:white; margin-bottom: 12px;">📊 Historique Suivi de Stock</button>
 
                     <div style="border-top:1px solid var(--border-color); margin:12px 0; padding-top:12px;">
                         <label style="font-size:0.8rem; font-weight:bold; color:#b45309;">➕ AJOUTER DU STOCK (RÉAPPROVISIONNER) :</label>
@@ -937,131 +939,206 @@
         }
 
         async function chargerDonnees(estFiltreExplicite = false) {
-    const dateDebut = document.getElementById('date-debut').value;
-    const dateFin = document.getElementById('date-fin').value;
+            const dateDebut = document.getElementById('date-debut').value;
+            const dateFin = document.getElementById('date-fin').value;
 
-    if (!dateDebut || !dateFin) return;
+            if (!dateDebut || !dateFin) return;
 
-    try {
-        const { data: inv } = await dbCloud.from('inventaire').select('*').order('nom', { ascending: true });
-        const { data: users } = await dbCloud.from('utilisateurs').select('*').order('nom', { ascending: true });
-        
-        if (inv) inventaire = inv;
-        if (users) listeUtilisateurs = users;
+            try {
+                const { data: inv } = await dbCloud.from('inventaire').select('*').order('nom', { ascending: true });
+                const { data: users } = await dbCloud.from('utilisateurs').select('*').order('nom', { ascending: true });
+                
+                if (inv) inventaire = inv;
+                if (users) listeUtilisateurs = users;
 
-        // --- DÉTERMINATION DYNAMIQUE DE L'UTILISATEUR ---
-        let nomConnecte = "";
-        let estAdmin = false;
+                // --- DÉTERMINATION DYNAMIQUE DE L'UTILISATEUR ---
+                let nomConnecte = "";
+                let estAdmin = false;
 
-        let userObj = null;
-        if (typeof utilisateurConnecte !== 'undefined' && utilisateurConnecte) userObj = utilisateurConnecte;
-        else if (typeof sessionUtilisateur !== 'undefined' && sessionUtilisateur) userObj = sessionUtilisateur;
-        else if (typeof currentUser !== 'undefined' && currentUser) userObj = currentUser;
+                let userObj = null;
+                if (typeof utilisateurConnecte !== 'undefined' && utilisateurConnecte) userObj = utilisateurConnecte;
+                else if (typeof sessionUtilisateur !== 'undefined' && sessionUtilisateur) userObj = sessionUtilisateur;
+                else if (typeof currentUser !== 'undefined' && currentUser) userObj = currentUser;
 
-        if (userObj) {
-            nomConnecte = userObj.nom;
-            estAdmin = (userObj.role === 'admin' || userObj.role === 'Administrateur');
-        } else {
-            const pageText = document.body.innerText;
-            const userTrouve = listeUtilisateurs.find(u => pageText.includes(u.nom));
-            
-            if (userTrouve) {
-                nomConnecte = userTrouve.nom;
-                estAdmin = (userTrouve.role === 'admin' || userTrouve.role === 'Administrateur');
-            } else if (pageText.includes("Administrateur") || pageText.includes("(Admin)")) {
-                estAdmin = true;
+                if (userObj) {
+                    nomConnecte = userObj.nom;
+                    estAdmin = (userObj.role === 'admin' || userObj.role === 'Administrateur');
+                } else {
+                    const pageText = document.body.innerText;
+                    const userTrouve = listeUtilisateurs.find(u => pageText.includes(u.nom));
+                    
+                    if (userTrouve) {
+                        nomConnecte = userTrouve.nom;
+                        estAdmin = (userTrouve.role === 'admin' || userTrouve.role === 'Administrateur');
+                    } else if (pageText.includes("Administrateur") || pageText.includes("(Admin)")) {
+                        estAdmin = true;
+                    }
+                }
+
+                // --- CHARGEMENT DES DONNÉES FILTRÉES ---
+                if (estAdmin) {
+                    historiqueVentes = await fetchAllRows('historique_ventes', '*', 'date', dateDebut, 'date', dateFin);
+                    mouvementsStock = await fetchAllRows('mouvements_stock', '*', 'created_at', dateDebut + "T00:00:00", 'created_at', dateFin + "T23:59:59");
+                } else {
+                    // 1. Charger les ventes de l'assistant connecté
+                    const { data: vAssistant, error: errV } = await dbCloud
+                        .from('historique_ventes')
+                        .select('*')
+                        .eq('assistant', nomConnecte)
+                        .gte('date', dateDebut)
+                        .lte('date', dateFin);
+                    if (errV) throw errV;
+                    historiqueVentes = vAssistant;
+
+                    // 2. Charger TOUS les mouvements de stock de la période pour pouvoir chasser les annulations
+                    const { data: tousLesMouvements, error: errM } = await dbCloud
+                        .from('mouvements_stock')
+                        .select('*')
+                        .gte('created_at', dateDebut + "T00:00:00")
+                        .lte('created_at', dateFin + "T23:59:59");
+                    if (errM) throw errM;
+
+                    // 3. Filtrage local : inclure ses ventes ET les annulations de ses ventes faites par l'admin
+                    mouvementsStock = tousLesMouvements.filter(m => {
+                        // Si le mouvement a été enregistré sous son nom
+                        if (m.assistant === nomConnecte) return true;
+                        
+                        // Si c'est une annulation (ex: faite par l'admin) qui cible une vente de cet assistant
+                        if (m.type === "ANNULATION" && m.observation) {
+                            return historiqueVentes.some(vente => m.observation.includes(vente.id));
+                        }
+                        
+                        return false;
+                    });
+                }
+
+                // --- GESTION DU TOP 10 DU MOIS ---
+                let dateDebutTop10 = dateDebut;
+                let dateFinTop10 = dateFin;
+
+                if (!estFiltreExplicite) {
+                    const maintenant = new Date();
+                    const annee = maintenant.getFullYear();
+                    const mois = String(maintenant.getMonth() + 1).padStart(2, '0');
+                    dateDebutTop10 = `${annee}-${mois}-01`;
+                    
+                    const offset = maintenant.getTimezoneOffset();
+                    dateFinTop10 = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
+                }
+
+                if (estAdmin) {
+                    historiqueVentesTop10 = await fetchAllRows('historique_ventes', '*', 'date', dateDebutTop10, 'date', dateFinTop10);
+                } else {
+                    const { data: vTop10, error: errTop10 } = await dbCloud
+                        .from('historique_ventes')
+                        .select('*')
+                        .eq('assistant', nomConnecte)
+                        .gte('date', dateDebutTop10)
+                        .lte('date', dateFinTop10);
+                    if (errTop10) throw errTop10;
+                    historiqueVentesTop10 = vTop10;
+                }
+
+                // --- CALCULS ET RADIOGRAPHIE DU PORTFOLIO ---
+                totalVentesFc = 0;
+                totalProfitFc = 0;
+
+                const ventesValides = historiqueVentes.filter(v => v.statut === 'VALIDE');
+
+                ventesValides.forEach(vente => {
+                    totalVentesFc += nombre(vente.total);
+                    totalProfitFc += nombre(vente.profit); 
+                });
+
+                if(document.getElementById('kpi-sales')) {
+                    document.getElementById('kpi-sales').innerText = `${totalVentesFc.toFixed(2).replace(/\.00$/, '')} Fc`;
+                }
+                if(document.getElementById('kpi-profit')) {
+                    document.getElementById('kpi-profit').innerText = `${totalProfitFc.toFixed(2).replace(/\.00$/, '')} Fc`;
+                }
+
+                refreshUI();
+
+            } catch (error) {
+                console.error("Erreur lors du filtrage dynamique :", error.message);
             }
         }
 
-        // --- CHARGEMENT DES DONNÉES FILTRÉES ---
-        if (estAdmin) {
-            historiqueVentes = await fetchAllRows('historique_ventes', '*', 'date', dateDebut, 'date', dateFin);
-            mouvementsStock = await fetchAllRows('mouvements_stock', '*', 'created_at', dateDebut + "T00:00:00", 'created_at', dateFin + "T23:59:59");
-        } else {
-            // 1. Charger les ventes de l'assistant connecté
-            const { data: vAssistant, error: errV } = await dbCloud
-                .from('historique_ventes')
-                .select('*')
-                .eq('assistant', nomConnecte)
-                .gte('date', dateDebut)
-                .lte('date', dateFin);
-            if (errV) throw errV;
-            historiqueVentes = vAssistant;
+        async function afficherSuiviStockMedicament(idProduit, nomMedicament = "") {
+            try {
+                const { data: mouvements, error } = await dbCloud
+                    .from('mouvements_stock')
+                    .select('*')
+                    .eq('produit_id', idProduit)
+                    .order('created_at', { ascending: false });
 
-            // 2. Charger TOUS les mouvements de stock de la période pour pouvoir chasser les annulations
-            const { data: tousLesMouvements, error: errM } = await dbCloud
-                .from('mouvements_stock')
-                .select('*')
-                .gte('created_at', dateDebut + "T00:00:00")
-                .lte('created_at', dateFin + "T23:59:59");
-            if (errM) throw errM;
+                if (error) throw error;
 
-            // 3. Filtrage local : inclure ses ventes ET les annulations de ses ventes faites par l'admin
-            mouvementsStock = tousLesMouvements.filter(m => {
-                // Si le mouvement a été enregistré sous son nom
-                if (m.assistant === nomConnecte) return true;
+                // Construction du tableau HTML
+                let html = `
+                    <div style="padding: 15px; font-family: sans-serif;">
+                        <h3 style="margin-top:0; color: #1e3d2f;">Suivi de stock : ${nomMedicament}</h3>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                            <thead>
+                                <tr style="background-color: #f4f4f4; border-bottom: 2px solid #ddd;">
+                                    <th style="padding: 10px;">Date & Heure</th>
+                                    <th style="padding: 10px;">Utilisateur</th>
+                                    <th style="padding: 10px;">Opération</th>
+                                    <th style="padding: 10px;">Qté</th>
+                                    <th style="padding: 10px;">Évolution du Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
                 
-                // Si c'est une annulation (ex: faite par l'admin) qui cible une vente de cet assistant
-                if (m.type === "ANNULATION" && m.observation) {
-                    return historiqueVentes.some(vente => m.observation.includes(vente.id));
+                if (!mouvements || mouvements.length === 0) {
+                    html += `<tr><td colspan="5" style="padding: 10px; text-align: center; color: #777;">Aucun mouvement enregistré pour ce produit.</td></tr>`;
+                } else {
+                    mouvements.forEach(m => {
+                        const estVente = m.type === "VENTE";
+                        const couleurBadge = estVente ? "#e6f4ea" : "#fce8e6";
+                        const couleurTexte = estVente ? "#137333" : "#c5221f";
+                        
+                        html += `
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 10px;">${m.date}</td>
+                                <td style="padding: 10px;"><strong>${m.assistant}</strong></td>
+                                <td style="padding: 10px;">
+                                    <span style="background: ${couleurBadge}; color: ${couleurTexte}; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">
+                                        ${m.type}
+                                    </span>
+                                </td>
+                                <td style="padding: 10px;">${m.quantite}</td>
+                                <td style="padding: 10px; font-weight: bold;">${m.stock_avant} &rarr; ${m.stock_apres}</td>
+                            </tr>
+                        `;
+                    });
                 }
+
+                html += `
+                            </tbody>
+                        </table>
+                        <button onclick="this.parentElement.parentElement.remove()" style="margin-top: 15px; background: #c5221f; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Fermer</button>
+                    </div>
+                `;
+
+                // Création d'un conteneur temporaire de type "Pop-up" au milieu de l'écran
+                const boiteModale = document.createElement('div');
+                boiteModale.id = "modal-suivi-stock";
+                boiteModale.style = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border-radius: 8px; z-index: 10000; max-width: 90%; width: 600px; max-height: 80vh; overflow-y: auto; border-top: 5px solid #1e3d2f;";
+                boiteModale.innerHTML = html;
                 
-                return false;
-            });
+                // Supprimer l'ancienne s'il y en a une ouverte
+                const ancienneModale = document.getElementById("modal-suivi-stock");
+                if (ancienneModale) ancienneModale.remove();
+                
+                document.body.appendChild(boiteModale);
+
+            } catch (error) {
+                console.error("Erreur lors du suivi de stock:", error.message);
+                alert("Impossible de charger le suivi de stock.");
+            }
         }
-
-        // --- GESTION DU TOP 10 DU MOIS ---
-        let dateDebutTop10 = dateDebut;
-        let dateFinTop10 = dateFin;
-
-        if (!estFiltreExplicite) {
-            const maintenant = new Date();
-            const annee = maintenant.getFullYear();
-            const mois = String(maintenant.getMonth() + 1).padStart(2, '0');
-            dateDebutTop10 = `${annee}-${mois}-01`;
-            
-            const offset = maintenant.getTimezoneOffset();
-            dateFinTop10 = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
-        }
-
-        if (estAdmin) {
-            historiqueVentesTop10 = await fetchAllRows('historique_ventes', '*', 'date', dateDebutTop10, 'date', dateFinTop10);
-        } else {
-            const { data: vTop10, error: errTop10 } = await dbCloud
-                .from('historique_ventes')
-                .select('*')
-                .eq('assistant', nomConnecte)
-                .gte('date', dateDebutTop10)
-                .lte('date', dateFinTop10);
-            if (errTop10) throw errTop10;
-            historiqueVentesTop10 = vTop10;
-        }
-
-        // --- CALCULS ET RADIOGRAPHIE DU PORTFOLIO ---
-        totalVentesFc = 0;
-        totalProfitFc = 0;
-
-        const ventesValides = historiqueVentes.filter(v => v.statut === 'VALIDE');
-
-        ventesValides.forEach(vente => {
-            totalVentesFc += nombre(vente.total);
-            totalProfitFc += nombre(vente.profit); 
-        });
-
-        if(document.getElementById('kpi-sales')) {
-            document.getElementById('kpi-sales').innerText = `${totalVentesFc.toFixed(2).replace(/\.00$/, '')} Fc`;
-        }
-        if(document.getElementById('kpi-profit')) {
-            document.getElementById('kpi-profit').innerText = `${totalProfitFc.toFixed(2).replace(/\.00$/, '')} Fc`;
-        }
-
-        refreshUI();
-
-    } catch (error) {
-        console.error("Erreur lors du filtrage dynamique :", error.message);
-    }
-}
-
 
         function refreshUI() {
             try { renderBilanVentes(); } catch(e) { console.error(e); }
@@ -1724,73 +1801,62 @@
         }
 
         async function annulerVente(idVente) {
-    try {
-        // Sécurité : Conversion en String pour éviter le piège du type (ex: "12" vs 12)
-        const vente = historiqueVentes.find(v => v.id.toString() === idVente.toString());
-        
-        if (!vente) {
-            console.error("Vente non trouvée dans l'historique local pour l'ID :", idVente);
-            return;
+            try {
+                const vente = historiqueVentes.find(v => v.id.toString() === idVente.toString());
+                
+                if (!vente) {
+                    console.error("Vente non trouvée dans l'historique local pour l'ID :", idVente);
+                    return;
+                }
+                if (vente.statut === "ANNULEE") {
+                    alert("Cette vente est déjà annulée.");
+                    return;
+                }
+                if (!confirm(`Annuler la vente du médicament ${vente.produit || ''} ?`)) return;
+
+                const nomQuiAnnule = vente.assistant; 
+                const produit = inventaire.find(p => p.id.toString() === vente.produit_id.toString());
+                
+                const maintenant = new Date();
+                const fragments = maintenant.toLocaleDateString('fr-FR').split('/');
+                const dateFormateeFr = `${fragments[0]}/${fragments[1]}/${fragments[2]} ${maintenant.toLocaleTimeString('fr-FR')}`;
+
+                if (produit) {
+                    const avant = parseFloat(produit.stock) || 0;
+                    const quantiteVendue = parseFloat(vente.quantite) || 0;
+                    const apres = parseFloat((avant + quantiteVendue).toFixed(2));
+                    
+                    const { error: errStock } = await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
+                    if (errStock) throw errStock;
+                    
+                    const { error: errMouv } = await dbCloud.from('mouvements_stock').insert([{
+                        created_at: maintenant.toISOString(),
+                        date: dateFormateeFr,
+                        assistant: nomQuiAnnule, 
+                        produit_id: produit.id,
+                        produit: produit.nom,
+                        type: "ANNULATION",
+                        quantite: quantiteVendue,
+                        stock_avant: avant,
+                        stock_apres: apres,
+                        observation: `Vente ${vente.id} annulée`
+                    }]);
+                    if (errMouv) throw errMouv;
+                } else {
+                    console.warn("Le produit lié à cette vente n'a pas été trouvé dans l'inventaire.");
+                }
+
+                const { error: errVente } = await dbCloud.from('historique_ventes').update({ statut: "ANNULEE" }).eq('id', vente.id);
+                if (errVente) throw errVente;
+                
+                await chargerDonnees();
+                alert("Vente annulée avec succès !");
+
+            } catch (error) {
+                console.error("Erreur lors de l'annulation :", error);
+                alert("Une erreur est survenue lors de l'annulation dans le cloud.");
+            }
         }
-        if (vente.statut === "ANNULEE") {
-            alert("Cette vente est déjà annulée.");
-            return;
-        }
-        if (!confirm(`Annuler la vente du médicament ${vente.produit || ''} ?`)) return;
-
-        const nomQuiAnnule = vente.assistant; 
-        const produit = inventaire.find(p => p.id.toString() === vente.produit_id.toString());
-        
-        const maintenant = new Date();
-        const fragments = maintenant.toLocaleDateString('fr-FR').split('/');
-        const dateFormateeFr = `${fragments[0]}/${fragments[1]}/${fragments[2]} ${maintenant.toLocaleTimeString('fr-FR')}`;
-
-        if (produit) {
-            // Utilisation directe de parseFloat au cas où 'nombre' poserait problème
-            const avant = parseFloat(produit.stock) || 0;
-            const quantiteVendue = parseFloat(vente.quantite) || 0;
-            const apres = parseFloat((avant + quantiteVendue).toFixed(2));
-            
-            // 1. Recréditer le stock du médicament dans l'inventaire
-            const { error: errStock } = await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
-            if (errStock) throw errStock;
-            
-            // 2. Enregistrer le mouvement d'annulation
-            const { error: errMouv } = await dbCloud.from('mouvements_stock').insert([{
-                created_at: maintenant.toISOString(),
-                date: dateFormateeFr,
-                assistant: nomQuiAnnule, 
-                produit_id: produit.id,
-                produit: produit.nom,
-                type: "ANNULATION",
-                quantite: quantiteVendue,
-                stock_avant: avant,
-                stock_apres: apres,
-                observation: `Vente ${vente.id} annulée`
-            }]);
-            if (errMouv) throw errMouv;
-        } else {
-            console.warn("Le produit lié à cette vente n'a pas été trouvé dans l'inventaire.");
-        }
-
-        // 3. Basculer le statut de la vente à ANNULEE
-        const { error: errVente } = await dbCloud.from('historique_ventes').update({ statut: "ANNULEE" }).eq('id', vente.id);
-        if (errVente) throw errVente;
-        
-        // 4. Rafraîchir l'application
-        await chargerDonnees();
-        
-        // Optionnel : Si vous avez une fonction spécifique pour ré-afficher le HTML, appelez-la ici
-        // ex: afficherHistorique(); afficherInventaire();
-        
-        alert("Vente annulée avec succès !");
-
-    } catch (error) {
-        console.error("Erreur lors de l'annulation :", error);
-        alert("Une erreur est survenue lors de l'annulation dans le cloud.");
-    }
-}
-
 
         async function applyReapp() {
             if (!selectedProductIdAdm) return;
