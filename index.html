@@ -626,7 +626,7 @@
                         <span>⚙️ Gérer l'article : <span id="focus-nom" contenteditable="true" style="background:#fff; border-bottom:1px dashed #64748b; padding:0 4px;">-</span></span>
                         <span id="focus-badge" class="badge ok">Stock Ok</span>
                     </div>
-                    <p style="font-size:0.75rem; color:var(--text-muted); margin-top:-8px; margin-bottom:10px;">👉 Vous pouvez modifier le nom directement en cliquant dessus.</p>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin-top:-8px; margin-bottom:10px;">👉 Vous pouvez modifier le nom directement en clicking dessus.</p>
                     
                     <div style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:12px; font-size:0.85rem;">
                         Quantité actuelle en stock système : <strong><span id="focus-stock">0</span></strong> unités.
@@ -937,59 +937,131 @@
         }
 
         async function chargerDonnees(estFiltreExplicite = false) {
-            const dateDebut = document.getElementById('date-debut').value;
-            const dateFin = document.getElementById('date-fin').value;
+    const dateDebut = document.getElementById('date-debut').value;
+    const dateFin = document.getElementById('date-fin').value;
 
-            if (!dateDebut || !dateFin) return;
+    if (!dateDebut || !dateFin) return;
 
-            try {
-                const { data: inv } = await dbCloud.from('inventaire').select('*').order('nom', { ascending: true });
-                const { data: users } = await dbCloud.from('utilisateurs').select('*').order('nom', { ascending: true });
-                
-                if (inv) inventaire = inv;
-                if (users) listeUtilisateurs = users;
+    try {
+        const { data: inv } = await dbCloud.from('inventaire').select('*').order('nom', { ascending: true });
+        const { data: users } = await dbCloud.from('utilisateurs').select('*').order('nom', { ascending: true });
+        
+        if (inv) inventaire = inv;
+        if (users) listeUtilisateurs = users;
 
-                historiqueVentes = await fetchAllRows('historique_ventes', '*', 'date', dateDebut, 'date', dateFin);
-                mouvementsStock = await fetchAllRows('mouvements_stock', '*', 'created_at', dateDebut + "T00:00:00", 'created_at', dateFin + "T23:59:59");
+        // --- DÉTERMINATION DYNAMIQUE DE L'UTILISATEUR ---
+        let nomConnecte = "";
+        let estAdmin = false;
 
-                let dateDebutTop10 = dateDebut;
-                let dateFinTop10 = dateFin;
+        let userObj = null;
+        if (typeof utilisateurConnecte !== 'undefined' && utilisateurConnecte) userObj = utilisateurConnecte;
+        else if (typeof sessionUtilisateur !== 'undefined' && sessionUtilisateur) userObj = sessionUtilisateur;
+        else if (typeof currentUser !== 'undefined' && currentUser) userObj = currentUser;
 
-                if (!estFiltreExplicite) {
-                    const maintenant = new Date();
-                    const annee = maintenant.getFullYear();
-                    const mois = String(maintenant.getMonth() + 1).padStart(2, '0');
-                    dateDebutTop10 = `${annee}-${mois}-01`;
-                    
-                    const offset = maintenant.getTimezoneOffset();
-                    dateFinTop10 = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
-                }
-
-                historiqueVentesTop10 = await fetchAllRows('historique_ventes', '*', 'date', dateDebutTop10, 'date', dateFinTop10);
-
-                totalVentesFc = 0;
-                totalProfitFc = 0;
-
-                const ventesValides = historiqueVentes.filter(v => v.statut === 'VALIDE');
-
-                ventesValides.forEach(vente => {
-                    totalVentesFc += nombre(vente.total);
-                    totalProfitFc += nombre(vente.profit); 
-                });
-
-                if(document.getElementById('kpi-sales')) {
-                    document.getElementById('kpi-sales').innerText = `${totalVentesFc.toFixed(2).replace('.00', '')} Fc`;
-                }
-                if(document.getElementById('kpi-profit')) {
-                    document.getElementById('kpi-profit').innerText = `${totalProfitFc.toFixed(2).replace('.00', '')} Fc`;
-                }
-
-                refreshUI();
-
-            } catch (error) {
-                console.error("Erreur lors du filtrage périodique :", error.message);
+        if (userObj) {
+            nomConnecte = userObj.nom;
+            estAdmin = (userObj.role === 'admin' || userObj.role === 'Administrateur');
+        } else {
+            const pageText = document.body.innerText;
+            const userTrouve = listeUtilisateurs.find(u => pageText.includes(u.nom));
+            
+            if (userTrouve) {
+                nomConnecte = userTrouve.nom;
+                estAdmin = (userTrouve.role === 'admin' || userTrouve.role === 'Administrateur');
+            } else if (pageText.includes("Administrateur") || pageText.includes("(Admin)")) {
+                estAdmin = true;
             }
         }
+
+        // --- CHARGEMENT DES DONNÉES FILTRÉES ---
+        if (estAdmin) {
+            historiqueVentes = await fetchAllRows('historique_ventes', '*', 'date', dateDebut, 'date', dateFin);
+            mouvementsStock = await fetchAllRows('mouvements_stock', '*', 'created_at', dateDebut + "T00:00:00", 'created_at', dateFin + "T23:59:59");
+        } else {
+            // 1. Charger les ventes de l'assistant connecté
+            const { data: vAssistant, error: errV } = await dbCloud
+                .from('historique_ventes')
+                .select('*')
+                .eq('assistant', nomConnecte)
+                .gte('date', dateDebut)
+                .lte('date', dateFin);
+            if (errV) throw errV;
+            historiqueVentes = vAssistant;
+
+            // 2. Charger TOUS les mouvements de stock de la période pour pouvoir chasser les annulations
+            const { data: tousLesMouvements, error: errM } = await dbCloud
+                .from('mouvements_stock')
+                .select('*')
+                .gte('created_at', dateDebut + "T00:00:00")
+                .lte('created_at', dateFin + "T23:59:59");
+            if (errM) throw errM;
+
+            // 3. Filtrage local : inclure ses ventes ET les annulations de ses ventes faites par l'admin
+            mouvementsStock = tousLesMouvements.filter(m => {
+                // Si le mouvement a été enregistré sous son nom
+                if (m.assistant === nomConnecte) return true;
+                
+                // Si c'est une annulation (ex: faite par l'admin) qui cible une vente de cet assistant
+                if (m.type === "ANNULATION" && m.observation) {
+                    return historiqueVentes.some(vente => m.observation.includes(vente.id));
+                }
+                
+                return false;
+            });
+        }
+
+        // --- GESTION DU TOP 10 DU MOIS ---
+        let dateDebutTop10 = dateDebut;
+        let dateFinTop10 = dateFin;
+
+        if (!estFiltreExplicite) {
+            const maintenant = new Date();
+            const annee = maintenant.getFullYear();
+            const mois = String(maintenant.getMonth() + 1).padStart(2, '0');
+            dateDebutTop10 = `${annee}-${mois}-01`;
+            
+            const offset = maintenant.getTimezoneOffset();
+            dateFinTop10 = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
+        }
+
+        if (estAdmin) {
+            historiqueVentesTop10 = await fetchAllRows('historique_ventes', '*', 'date', dateDebutTop10, 'date', dateFinTop10);
+        } else {
+            const { data: vTop10, error: errTop10 } = await dbCloud
+                .from('historique_ventes')
+                .select('*')
+                .eq('assistant', nomConnecte)
+                .gte('date', dateDebutTop10)
+                .lte('date', dateFinTop10);
+            if (errTop10) throw errTop10;
+            historiqueVentesTop10 = vTop10;
+        }
+
+        // --- CALCULS ET RADIOGRAPHIE DU PORTFOLIO ---
+        totalVentesFc = 0;
+        totalProfitFc = 0;
+
+        const ventesValides = historiqueVentes.filter(v => v.statut === 'VALIDE');
+
+        ventesValides.forEach(vente => {
+            totalVentesFc += nombre(vente.total);
+            totalProfitFc += nombre(vente.profit); 
+        });
+
+        if(document.getElementById('kpi-sales')) {
+            document.getElementById('kpi-sales').innerText = `${totalVentesFc.toFixed(2).replace(/\.00$/, '')} Fc`;
+        }
+        if(document.getElementById('kpi-profit')) {
+            document.getElementById('kpi-profit').innerText = `${totalProfitFc.toFixed(2).replace(/\.00$/, '')} Fc`;
+        }
+
+        refreshUI();
+
+    } catch (error) {
+        console.error("Erreur lors du filtrage dynamique :", error.message);
+    }
+}
+
 
         function refreshUI() {
             try { renderBilanVentes(); } catch(e) { console.error(e); }
@@ -1233,13 +1305,11 @@
             });
         }
 
-        // FONCTION DE RENDU DYNAMIQUE POUR LES PRODUITS ÉPUISÉS OU TRÈS BAS (SUPABASE SYNCHRONISÉ)
         function renderRupturesStock() {
             const container = document.getElementById("admin-ruptures-liste");
             if (!container) return;
             container.innerHTML = "";
 
-            // Filtrer uniquement les articles actifs dont la quantité est comprise entre 0 et 2
             const articlesCritiques = inventaire.filter(p => p.actif !== false && nombre(p.stock) <= 2);
 
             if (articlesCritiques.length === 0) {
@@ -1269,7 +1339,6 @@
             });
         }
 
-        // GESTION DU RÉPERTOIRE DES MANQUANTS
         function toggleRepertoireManquants() {
             const zone = document.getElementById("zone-repertoire-manquants");
             const btn = document.getElementById("btn-toggle-rep");
@@ -1427,11 +1496,11 @@
                     <td><span style="${styleNom}">${p.nom}</span>${affichageDate}</td>
                     <td><span class="badge ${nombre(p.stock) <= 2 ? 'alert':'ok'}">${nombre(p.stock)}</span></td>
                     <td style="color: #3182ce; font-weight:500; background: #ebf8ff;">${nombre(p.pua || 0)} Fc</td>
-                    <td style="color: #38a169; font-weight:600; background: #f0fff4;">${puatot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #38a169; font-weight:600; background: #f0fff4;">${puatot.toFixed(2).replace(/\.00$/, '')} Fc</td>
                     <td style="color: #3182ce; font-weight:600; background: #ebf8ff;">${nombre(p.pvu || 0)} Fc</td>
-                    <td style="color: #38a169; font-weight:600; background: #f0fff4;">${pvutot.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #38a169; font-weight:600; background: #f0fff4;">${pvutot.toFixed(2).replace(/\.00$/, '')} Fc</td>
                     <td style="color: #3182ce; font-weight:bold; background: #e2e8f0;">
-                        ${pvevo.toFixed(2).replace('.00', '')} Fc
+                        ${pvevo.toFixed(2).replace(/\.00$/, '')} Fc
                         <br><small style="color:#64748b; font-weight:normal;">(${qteVendue} vendus)</small>
                     </td>
                     <td style="color: #38a169; font-weight:bold; background: #f0fff4;">${beneficeGeneres} Fc</td>
@@ -1464,12 +1533,12 @@
                 <tr class="total-row">
                     <td colspan="2">TOTAL</td>
                     <td>-</td>
-                    <td style="color: #3182ce; background: #ebf8ff;">${sommePua.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color: #38a169; background: #f0fff4;">${sommePuaTot.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color: #3182ce; background: #ebf8ff;">${sommePvu.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color: #38a169; background: #f0fff4;">${sommePvuTot.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color: #3182ce; background: #e2e8f0;">${sommePvevo.toFixed(2).replace('.00', '')} Fc</td>
-                    <td style="color: #38a169; background: #f0fff4;">${sommeBeneficesJ.toFixed(2).replace('.00', '')} Fc</td>
+                    <td style="color: #3182ce; background: #ebf8ff;">${sommePua.toFixed(2).replace(/\.00$/, '')} Fc</td>
+                    <td style="color: #38a169; background: #f0fff4;">${sommePuaTot.toFixed(2).replace(/\.00$/, '')} Fc</td>
+                    <td style="color: #3182ce; background: #ebf8ff;">${sommePvu.toFixed(2).replace(/\.00$/, '')} Fc</td>
+                    <td style="color: #38a169; background: #f0fff4;">${sommePvuTot.toFixed(2).replace(/\.00$/, '')} Fc</td>
+                    <td style="color: #3182ce; background: #e2e8f0;">${sommePvevo.toFixed(2).replace(/\.00$/, '')} Fc</td>
+                    <td style="color: #38a169; background: #f0fff4;">${sommeBeneficesJ.toFixed(2).replace(/\.00$/, '')} Fc</td>
                     <td>-</td>
                 </tr>
             `;
@@ -1634,7 +1703,7 @@
                 id: idVente,
                 date: dateLocale, 
                 heure: heureLocale, 
-                assistant: manuscript = utilisateurConnecte.nom,
+                assistant: utilisateurConnecte.nom,
                 assistant_id: utilisateurConnecte.id,
                 produit_id: produit.id,
                 nom: produit.nom,
@@ -1655,20 +1724,73 @@
         }
 
         async function annulerVente(idVente) {
-            const vente = historiqueVentes.find(v => v.id === idVente);
-            if (!vente || vente.statut === "ANNULEE" || !confirm("Annuler cette vente cloud ?")) return;
-
-            const produit = inventaire.find(p => p.id === vente.produit_id);
-            if (produit) {
-                const avant = nombre(produit.stock);
-                const apres = nombre((avant + nombre(vente.quantite)).toFixed(2));
-                await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
-                await enregistrerMouvementCloud("ANNULATION", produit, vente.quantite, avant, apres, vente.id);
-            }
-
-            await dbCloud.from('historique_ventes').update({ statut: "ANNULEE" }).eq('id', idVente);
-            await chargerDonnees();
+    try {
+        // Sécurité : Conversion en String pour éviter le piège du type (ex: "12" vs 12)
+        const vente = historiqueVentes.find(v => v.id.toString() === idVente.toString());
+        
+        if (!vente) {
+            console.error("Vente non trouvée dans l'historique local pour l'ID :", idVente);
+            return;
         }
+        if (vente.statut === "ANNULEE") {
+            alert("Cette vente est déjà annulée.");
+            return;
+        }
+        if (!confirm(`Annuler la vente du médicament ${vente.produit || ''} ?`)) return;
+
+        const nomQuiAnnule = vente.assistant; 
+        const produit = inventaire.find(p => p.id.toString() === vente.produit_id.toString());
+        
+        const maintenant = new Date();
+        const fragments = maintenant.toLocaleDateString('fr-FR').split('/');
+        const dateFormateeFr = `${fragments[0]}/${fragments[1]}/${fragments[2]} ${maintenant.toLocaleTimeString('fr-FR')}`;
+
+        if (produit) {
+            // Utilisation directe de parseFloat au cas où 'nombre' poserait problème
+            const avant = parseFloat(produit.stock) || 0;
+            const quantiteVendue = parseFloat(vente.quantite) || 0;
+            const apres = parseFloat((avant + quantiteVendue).toFixed(2));
+            
+            // 1. Recréditer le stock du médicament dans l'inventaire
+            const { error: errStock } = await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
+            if (errStock) throw errStock;
+            
+            // 2. Enregistrer le mouvement d'annulation
+            const { error: errMouv } = await dbCloud.from('mouvements_stock').insert([{
+                created_at: maintenant.toISOString(),
+                date: dateFormateeFr,
+                assistant: nomQuiAnnule, 
+                produit_id: produit.id,
+                produit: produit.nom,
+                type: "ANNULATION",
+                quantite: quantiteVendue,
+                stock_avant: avant,
+                stock_apres: apres,
+                observation: `Vente ${vente.id} annulée`
+            }]);
+            if (errMouv) throw errMouv;
+        } else {
+            console.warn("Le produit lié à cette vente n'a pas été trouvé dans l'inventaire.");
+        }
+
+        // 3. Basculer le statut de la vente à ANNULEE
+        const { error: errVente } = await dbCloud.from('historique_ventes').update({ statut: "ANNULEE" }).eq('id', vente.id);
+        if (errVente) throw errVente;
+        
+        // 4. Rafraîchir l'application
+        await chargerDonnees();
+        
+        // Optionnel : Si vous avez une fonction spécifique pour ré-afficher le HTML, appelez-la ici
+        // ex: afficherHistorique(); afficherInventaire();
+        
+        alert("Vente annulée avec succès !");
+
+    } catch (error) {
+        console.error("Erreur lors de l'annulation :", error);
+        alert("Une erreur est survenue lors de l'annulation dans le cloud.");
+    }
+}
+
 
         async function applyReapp() {
             if (!selectedProductIdAdm) return;
@@ -1833,7 +1955,7 @@
                 const badgeStockClass = item.stockActuel <= 2 ? 'badge alert' : 'badge ok';
 
                 container.innerHTML += `
-                    <div class="list-item" style="font-size:0.9rem; padding:10px 8px; border-bottom:1px solid #edf2f7; display:flex; justify-content:between; align-items:center;">
+                    <div class="list-item" style="font-size:0.9rem; padding:10px 8px; border-bottom:1px solid #edf2f7; display:flex; justify-content:space-between; align-items:center;">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <span style="font-weight:bold; color:var(--primary-dark); background:#eaf7f2; padding:4px 8px; border-radius:50%; min-width:20px; text-align:center;">${rang}</span>
                             <div>
@@ -1936,7 +2058,7 @@
                                 <small>${v.date} ${v.heure} - par ${v.assistant}</small><br>
                                 <b>${v.nom}</b> x${nombre(v.quantite)} ${cancelBtn}
                             </div>
-                            <span style="color:var(--primary-dark); font-weight:bold;">${nombre(v.total)} Fc</span>
+                            <span style="color:var(--primary-dark); font-weight:bold;">${nombre(v.total).toFixed(2).replace(/\.00$/, '')} Fc</span>
                         </div>
                     `;
                 });
