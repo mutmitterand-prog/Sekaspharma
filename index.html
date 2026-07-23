@@ -494,10 +494,53 @@
                     
                     <label style="font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 4px;">QUANTITÉ À VENDRE :</label>
                     <input type="number" id="sale-qty" value="1" min="1" style="margin-bottom: 8px;">
-                    <button onclick="processSale()">Confirmer la vente</button>
+                    <button onclick="ajouterAuPanier()">➕ Ajouter au panier</button>
                     <button class="btn-secondary" onclick="document.getElementById('ast-selected-area').style.display='none'; selectedProductIdAst=null;">Annuler</button>
                 </div>
-            </div>
+                <!-- ==================== PANIER ==================== -->
+      <hr style="margin:18px 0;">
+
+<div id="cart-area">
+    <div class="card-title">🛒 Panier de vente</div>
+
+    <div id="cart-list">
+        <p style="text-align:center;color:#718096;">
+            Le panier est vide.
+        </p>
+    </div>
+    
+   <div id="cart-resume"
+     style="
+        margin-top:12px;
+        padding:10px;
+        border-radius:8px;
+        background:#eff6ff;
+        border:1px solid #bfdbfe;
+        font-size:14px;
+     ">
+</div>
+
+    <div style="display:flex;justify-content:space-between;margin-top:10px;font-weight:bold;">
+        <span>Total :</span>
+        <span id="cart-total">0 Fc</span>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:12px;">
+        <button
+            style="flex:1;background:#2563eb;"
+            onclick="validerPanier()">
+            ✅ Valider le panier
+        </button>
+
+        <button
+            class="btn-secondary"
+            style="width:auto;"
+            onclick="viderPanier()">
+            🗑 Vider
+        </button>
+    </div>
+</div>
+</div>
 
             <div class="card">
                 <div class="card-title">📊 Vos Ventes de la Période</div>
@@ -580,6 +623,8 @@
                     <span class="menu-card-title">Paramètres</span>
                 </div>
             </div>
+             
+
 
             <!-- SECTION SUB-ADMIN: LOGISTIQUE / STOCKS -->
             <div id="sub-admin-logistique" class="admin-section">
@@ -595,23 +640,135 @@
                 <!-- RÉPERTOIRE DES PRODUITS MANQUANTS / VENDUS SANS ENCAISSEMENT -->
                 <div class="card" style="border: 1px solid var(--warning); background: #fffdfa;">
                     <div class="card-title" style="color: #b45309; display: flex; justify-content: space-between; align-items: center;">
-                        <span>📉 Produits Manquants / Vendus sans encaissement</span>
+                        <span>📋 Journal des Écarts d'Inventaire</span>
                         <button onclick="toggleRepertoireManquants()" id="btn-toggle-rep" style="width: auto; margin: 0; padding: 4px 10px; font-size: 0.8rem; background: var(--warning);">Afficher la liste</button>
                     </div>
                     
                     <div id="zone-repertoire-manquants" style="display: none; margin-top: 10px;">
                         <input type="text" id="filter-manquants" placeholder="Filtrer par nom de médicament..." oninput="renderRepertoireManquants()" style="padding: 6px 10px; font-size: 0.85rem; margin-bottom: 8px;">
                         
+                        <div id="kpi-inventaire" style="
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:12px;
+margin:15px 0;
+">
+
+                          <div class="card" id="inventaire-en-cours-card">
+
+    <div class="card-title">
+        📦 Inventaire en cours
+    </div>
+
+    <div id="inventaire-en-cours-info">
+
+        <div style="color:#718096;">
+            Aucun inventaire en cours.
+        </div>
+
+    </div>
+
+</div>
+
+
+    <div class="card">
+        <div style="font-size:13px;color:#666;">📋 Contrôles</div>
+        <div id="kpi-controles" style="font-size:26px;font-weight:bold;">0</div>
+    </div>
+
+    <div class="card">
+        <div style="font-size:13px;color:#666;">🔴 Pertes</div>
+        <div id="kpi-pertes" style="font-size:26px;font-weight:bold;color:#dc2626;">0 Fc</div>
+    </div>
+
+    <div class="card">
+        <div style="font-size:13px;color:#666;">🟢 Surplus</div>
+        <div id="kpi-surplus" style="font-size:26px;font-weight:bold;color:#16a34a;">0 Fc</div>
+    </div>
+
+    <div class="card">
+        <div style="font-size:13px;color:#666;">⏳ À analyser</div>
+        <div id="kpi-analyser" style="font-size:26px;font-weight:bold;color:#f59e0b;">0</div>
+    </div>
+
+</div>
+                        
                         <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                          
+                          <div class="card">
+
+    <div class="card-title">
+        📚 Historique des inventaires
+    </div>
+
+    <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;">
+
+        <input
+            id="filter-historique-inventaire"
+            type="text"
+            placeholder="Rechercher un inventaire..."
+            oninput="chargerHistoriqueInventaires()"
+            style="flex:1;"
+        >
+
+    </div>
+
+    <div style="overflow:auto;">
+
+        <table class="table">
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Début</th>
+
+                    <th>Fin</th>
+
+                    <th>Actifs</th>
+
+                    <th>Contrôlés</th>
+
+                    <th>Écarts</th>
+
+                    <th>Pertes</th>
+
+                    <th>Surplus</th>
+
+                    <th>Statut</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="table-body-historique-inventaires">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
                             <table>
-                                <thead>
-                                    <tr>
-                                        <th>Date & Heure</th>
-                                        <th>Médicament</th>
-                                        <th>Quantité Manquante</th>
-                                        <th>Auteur du Contrôle</th>
-                                    </tr>
-                                </thead>
+                               <thead>
+    <tr>
+        <th>Date</th>
+        <th>Médicament</th>
+        <th>Système</th>
+        <th>Réel</th>
+        <th>Écart</th>
+        <th>Valeur</th>
+        <th>Statut</th>
+        <th>Auteur</th>
+        <th>Action</th>
+    </tr>
+</thead>
                                 <tbody id="table-body-manquants">
                                     <!-- Rendu dynamique -->
                                 </tbody>
@@ -738,13 +895,203 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-title">🧾 Journal Central des Tickets de Ventes Cloud</div>
-                    <div id="admin-sales-log" style="max-height: 400px; overflow-y: auto;">
-                        <!-- Rendu dynamique -->
-                    </div>
-                </div>
-            </div>
+               <div class="card">
+
+<div class="card-title">
+🧾 Journal Central des Tickets de Vente
+</div>
+
+
+<!-- FILTRE -->
+
+<div style="
+background:#f8fafc;
+padding:12px;
+border-radius:12px;
+margin-bottom:15px;
+">
+
+<b>🔎 Filtrer les ventes</b>
+
+<div style="
+display:flex;
+gap:10px;
+margin-top:10px;
+flex-wrap:wrap;
+">
+
+<input
+type="date"
+id="ticket-date"
+onchange="chargerTickets()"
+style="
+flex:1;
+min-width:150px;
+">
+
+
+<button
+onclick="chargerAnalyseVentes('semaine')"
+style="width:auto;">
+📅 Semaine
+</button>
+
+
+<button
+onclick="chargerAnalyseVentes('mois')"
+style="width:auto;">
+📆 Mois
+</button>
+
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- RESUME GENERAL -->
+
+<div id="ticket-summary"
+style="
+background:white;
+border:1px solid #e2e8f0;
+border-radius:12px;
+padding:15px;
+margin-bottom:12px;
+">
+
+Chargement du résumé...
+
+</div>
+
+
+
+<!-- PRODUITS -->
+
+<div id="top-products-summary"
+style="
+background:white;
+border:1px solid #e2e8f0;
+border-radius:12px;
+padding:15px;
+margin-bottom:12px;
+">
+
+Chargement produits...
+
+</div>
+
+
+
+<!-- ASSISTANTS -->
+
+<div id="assistant-performance-summary"
+style="
+background:white;
+border:1px solid #e2e8f0;
+border-radius:12px;
+padding:15px;
+margin-bottom:12px;
+">
+
+Chargement performances...
+
+</div>
+
+
+
+<!-- PERIODE -->
+
+<div id="sales-period-summary"
+style="
+background:white;
+border:1px solid #e2e8f0;
+border-radius:12px;
+padding:15px;
+margin-bottom:12px;
+">
+
+Chargement analyse période...
+
+</div>
+
+
+
+<!-- GRAPHIQUE -->
+
+<div id="sales-chart"
+style="
+background:white;
+border:1px solid #e2e8f0;
+border-radius:12px;
+padding:15px;
+margin-bottom:12px;
+">
+
+Chargement graphique...
+
+</div>
+
+
+
+<!-- RAPPORT -->
+
+<div style="
+text-align:right;
+margin:15px 0;
+">
+
+<button
+onclick="imprimerRapportJournalier()"
+style="
+background:#2563eb;
+width:auto;
+padding:10px 18px;
+">
+
+🖨 Rapport journalier
+
+</button>
+
+</div>
+
+
+
+
+<!-- TICKETS -->
+
+<div style="
+background:#f8fafc;
+border-radius:12px;
+padding:10px;
+">
+
+<div style="
+font-weight:bold;
+font-size:17px;
+margin-bottom:10px;
+">
+
+📋 Historique des tickets
+
+</div>
+
+
+<div id="admin-sales-log"
+style="
+max-height:450px;
+overflow-y:auto;
+">
+
+</div>
+
+
+</div>
+
+</div>
 
             <!-- SECTION SUB-ADMIN: PERSONNEL -->
             <div id="sub-admin-personnel" class="admin-section">
@@ -788,12 +1135,87 @@
 
             <!-- SECTION SUB-ADMIN: PARAMÈTRES -->
             <div id="sub-admin-parametres" class="admin-section">
-                <div class="card" style="border-left: 4px solid var(--warning);">
-                    <div class="card-title" style="color: var(--warning);">🏢 Personnalisation de l'Officine</div>
-                    <label style="font-size: 0.8rem; font-weight: bold;">NOM DE LA PHARMACIE :</label>
-                    <input type="text" id="pharmacy-name-input" placeholder="Ex: Sekas pharma...">
-                    <button onclick="sauvegarderNomPharmacie()" style="background:var(--accent-blue);">Mettre à jour le nom</button>
-                </div>
+                <div class="card" style="border-left:4px solid var(--warning);">
+
+    <div class="card-title" style="color:var(--warning);">
+        🏥 Informations de la Pharmacie
+    </div>
+
+    <label><b>Nom de la pharmacie</b></label>
+    <input type="text"
+           id="pharmacy-name-input"
+           placeholder="Ex : Sekas Pharma">
+
+    <label><b>Adresse</b></label>
+    <input type="text"
+           id="pharmacy-address"
+           placeholder="Avenue..., Commune..., Ville">
+
+    <label><b>Téléphone</b></label>
+    <input type="text"
+           id="pharmacy-phone"
+           placeholder="+243...">
+
+    <label><b>Email</b></label>
+    <input type="email"
+           id="pharmacy-email"
+           placeholder="contact@pharma.com">
+
+    <label><b>RCCM / Numéro Fiscal</b></label>
+    <input type="text"
+           id="pharmacy-rccm"
+           placeholder="RCCM ou ID NAT">
+
+    <label><b>Slogan</b></label>
+    <input type="text"
+           id="pharmacy-slogan"
+           placeholder="Votre santé, notre priorité">
+           <label><b>Logo de la pharmacie</b></label>
+
+<input
+    type="file"
+    id="pharmacy-logo"
+    accept="image/*">
+
+<div
+    id="logo-preview"
+    style="margin-top:10px;text-align:center;">
+</div>
+
+    <button
+        onclick="sauvegarderInfosPharmacie()"
+        style="background:var(--accent-blue);">
+
+        💾 Enregistrer les informations
+
+    </button>
+
+</div>
+                
+                <div class="card">
+    <div class="card-title">💾 Sauvegarde des données</div>
+
+    <button onclick="exporterDonnees()">
+        📤 Exporter une sauvegarde
+    </button>
+    
+    <button onclick="migrerAnciennesVentesVersTickets()">
+    🔄 Migrer les anciennes ventes
+</button>
+
+    <button class="btn-secondary" onclick="document.getElementById('import-json').click()">
+        📥 Restaurer une sauvegarde
+    </button>
+    
+
+    <input
+        type="file"
+        id="import-json"
+        accept=".json"
+        style="display:none"
+        onchange="importerDonnees(event)">
+</div>
+
 
                 <div class="card" style="border: 1px solid var(--danger); background: #fff5f5;">
                     <div class="card-title" style="color: var(--danger);">⚠️ Zone de Danger Système</div>
@@ -821,6 +1243,566 @@
             <span>Espace Admin</span>
         </button>
     </nav>
+    
+    <div id="controle-modal" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,.55);
+z-index:99999;
+overflow:auto;
+">
+
+    <div style="
+    background:#fff;
+    max-width:520px;
+    margin:35px auto;
+    border-radius:12px;
+    padding:20px;
+    ">
+
+        <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:15px;
+        ">
+
+            <h2 style="margin:0;">
+                🔍 Contrôle d'inventaire
+            </h2>
+
+            <button
+            onclick="fermerControleInventaire()"
+            style="
+            width:auto;
+            background:#dc2626;">
+                ✖
+            </button>
+
+        </div>
+
+
+        <!-- INFORMATIONS PRODUIT -->
+        <div style="
+        background:#f8fafc;
+        border:1px solid #e2e8f0;
+        border-radius:8px;
+        padding:15px;
+        margin-bottom:18px;
+        ">
+
+            <div style="font-size:14px;color:#666;">
+                Produit contrôlé
+            </div>
+
+
+            <div
+            id="ctrl-produit"
+            style="
+            font-size:22px;
+            font-weight:bold;
+            color:#0f766e;
+            margin-top:4px;">
+                —
+            </div>
+
+
+            <div style="margin-top:12px;">
+                📦 Stock système :
+                <b id="ctrl-stock-theorique">0</b>
+            </div>
+
+
+
+            <hr style="margin:15px 0;">
+
+
+
+            <!-- RESULTAT AUTOMATIQUE -->
+            <div
+            id="ctrl-resultat"
+            style="
+            display:none;
+            background:#ffffff;
+            border-radius:8px;
+            padding:10px;
+            ">
+
+
+                <div style="margin-bottom:6px;">
+                    📦 Stock physique :
+                    <b id="ctrl-stock-saisi">0</b>
+                </div>
+
+
+                <div style="margin-bottom:6px;">
+                    ⚖️ Écart :
+                    <b id="ctrl-ecart">0</b>
+                </div>
+
+
+                <div>
+                    💰 Valeur de l'écart :
+                    <b id="ctrl-valeur">0 Fc</b>
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- SAISIE STOCK REEL -->
+        <label>
+            <b>Stock réellement compté</b>
+        </label>
+
+
+        <input
+        type="number"
+        id="ctrl-stock-physique"
+        min="0"
+        placeholder="Nombre réellement compté">
+
+
+
+        <!-- BOUTONS -->
+        <div style="
+        margin-top:20px;
+        display:flex;
+        gap:10px;
+        ">
+
+
+            <button
+            class="btn-secondary"
+            onclick="fermerControleInventaire()">
+
+                Annuler
+
+            </button>
+
+
+
+            <button
+            id="btn-valider-controle"
+            onclick="validerControleInventaire()"
+            style="background:#16a34a;">
+
+                ✅ Valider le contrôle
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+</div>
+
+<div id="analyse-inventaire-modal" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,.55);
+z-index:99999;
+overflow:auto;
+">
+
+
+<div style="
+background:#fff;
+max-width:520px;
+margin:35px auto;
+border-radius:12px;
+padding:20px;
+">
+
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+">
+
+<h2>
+🔍 Analyse d'écart d'inventaire
+</h2>
+
+
+<button
+onclick="fermerAnalyseInventaire()"
+style="
+background:#dc2626;
+width:auto;">
+✖
+</button>
+
+
+</div>
+
+
+
+<div style="
+background:#f8fafc;
+padding:15px;
+border-radius:8px;
+margin:15px 0;
+">
+
+
+<div>
+Produit :
+<b id="analyse-produit">-</b>
+</div>
+
+
+<div>
+📦 Stock système :
+<b id="analyse-systeme">0</b>
+</div>
+
+
+<div>
+📦 Stock réel :
+<b id="analyse-reel">0</b>
+</div>
+
+
+<div>
+⚖️ Écart :
+<b id="analyse-ecart">0</b>
+</div>
+
+
+<div>
+💰 Valeur :
+<b id="analyse-valeur">0 Fc</b>
+</div>
+
+
+</div>
+
+
+
+
+<label>
+<b>Cause de l'écart</b>
+</label>
+
+
+<select id="analyse-cause">
+
+<option>Erreur de comptage</option>
+
+<option>Vente oubliée</option>
+
+<option>Casse</option>
+
+<option>Péremption</option>
+
+<option>Vol suspecté</option>
+
+<option>Perte inconnue</option>
+
+<option>Produit retrouvé</option>
+
+<option>Autre</option>
+
+</select>
+
+
+
+
+<label style="margin-top:15px;">
+<b>Observation</b>
+</label>
+
+
+<textarea
+id="analyse-observation"
+rows="4"
+placeholder="Expliquez la situation..."
+></textarea>
+
+
+
+
+<label style="margin-top:15px;">
+<b>Statut</b>
+</label>
+
+
+<select id="analyse-statut">
+
+<option value="RESOLU">
+✅ Résolu
+</option>
+
+<option value="JUSTIFIE">
+📄 Justifié
+</option>
+
+<option value="A_SUIVRE">
+⏳ À suivre
+</option>
+
+</select>
+
+<label style="margin-top:15px;">
+<b>Action sur le stock</b>
+</label>
+
+
+<select id="analyse-action-stock">
+
+<option value="CORRIGER">
+✅ Corriger le stock
+</option>
+
+
+<option value="CONSERVER">
+⏳ Garder sans correction
+</option>
+
+</select>
+
+
+
+<div style="
+display:flex;
+gap:10px;
+margin-top:20px;
+">
+
+
+<button
+class="btn-secondary"
+onclick="fermerAnalyseInventaire()">
+Annuler
+</button>
+
+
+
+<button
+onclick="enregistrerAnalyseInventaire()"
+style="background:#16a34a;">
+💾 Enregistrer
+</button>
+
+
+</div>
+
+
+</div>
+
+</div>
+    
+    <div id="ticket-modal" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,.65);
+backdrop-filter:blur(3px);
+z-index:9999;
+overflow:auto;
+padding:15px;
+box-sizing:border-box;
+">
+
+<div style="
+max-width:430px;
+margin:25px auto;
+">
+
+    <!-- Barre d'actions -->
+
+    <div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#0f766e;
+    color:white;
+    padding:12px 15px;
+    border-radius:12px 12px 0 0;
+    ">
+
+        <b style="font-size:18px;">
+            🧾 Ticket PharmaSys
+        </b>
+
+        <div style="display:flex;gap:8px;">
+
+            <button
+                onclick="imprimerTicket(ticketActuel.id)"
+                style="
+                width:42px;
+                height:42px;
+                border-radius:8px;
+                background:#059669;">
+                🖨
+            </button>
+
+            <button
+                onclick="exporterTicketPDF()"
+                style="
+                width:42px;
+                height:42px;
+                border-radius:8px;
+                background:#2563eb;">
+                📄
+            </button>
+
+            <button
+                onclick="partagerTicket()"
+                style="
+                width:42px;
+                height:42px;
+                border-radius:8px;
+                background:#7c3aed;">
+                📤
+            </button>
+
+
+<button
+onclick="annulerTicket()"
+style="
+width:42px;
+height:42px;
+border-radius:8px;
+background:#f59e0b;">
+↩️
+</button>
+
+            <button
+                onclick="fermerTicket()"
+                style="
+                width:42px;
+                height:42px;
+                border-radius:8px;
+                background:#dc2626;">
+                ✖
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- Ticket -->
+
+    <div style="
+    background:white;
+    padding:22px;
+    box-shadow:0 8px 30px rgba(0,0,0,.18);
+    border-radius:0 0 12px 12px;
+    min-height:250px;
+    ">
+
+        <div id="ticket-contenu"></div>
+
+    </div>
+
+</div>
+
+</div>
+
+<div id="modal-detail-inventaire" style="
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.55);
+z-index:99999;
+padding:15px;
+overflow:auto;
+">
+
+<div style="
+background:#fff;
+max-width:850px;
+width:100%;
+margin:20px auto;
+border-radius:16px;
+overflow:hidden;
+box-shadow:0 15px 40px rgba(0,0,0,.25);
+">
+
+<!-- En-tête -->
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px 20px;
+background:linear-gradient(135deg,#10b981,#059669);
+color:#fff;
+">
+
+<div>
+
+<div style="
+font-size:22px;
+font-weight:bold;
+">
+📦 Détail de l'inventaire
+</div>
+
+<div style="
+font-size:13px;
+opacity:.9;
+margin-top:4px;
+">
+Consultation complète d'un cycle d'inventaire
+</div>
+
+</div>
+
+<button
+onclick="fermerDetailInventaire()"
+style="
+width:42px;
+height:42px;
+border:none;
+border-radius:50%;
+background:#fff;
+color:#059669;
+font-size:22px;
+font-weight:bold;
+cursor:pointer;
+">
+✕
+</button>
+
+</div>
+
+
+<!-- Contenu -->
+
+<div
+id="contenu-detail-inventaire"
+style="
+padding:20px;
+">
+
+Chargement...
+
+</div>
+
+</div>
+
+</div>
 
     <!-- CODE SCRIPT PRINCIPAL -->
     <script>
@@ -833,35 +1815,65 @@
         let historiqueVentesTop10 = []; 
         let mouvementsStock = [];
         let listeUtilisateurs = [];
-        
+        let panier = [];
         let utilisateurConnecte = null;
         let totalVentesFc = 0;
         let totalProfitFc = 0;
         let selectedProductIdAst = null;
         let selectedProductIdAdm = null;
+        let produitControleActuel = null;
+        let controleAnalyseActuel = null;
+        let inventaireActuel = null;
+        let ticketActuel = null;
 
         let pageActuelle = 0;
         const produitsParPage = 25; 
         let filtreTexteTableau = "";
+        
+        
 
-        function openAdminSubSection(sectionId) {
-            document.getElementById('admin-main-menu-grid').style.display = 'none';
-            const sections = document.querySelectorAll('.admin-section');
-            sections.forEach(sec => sec.style.display = 'none');
-            
-            document.getElementById(sectionId).style.display = 'block';
-            document.getElementById('btn-back-to-grid').style.display = 'block';
-            
-            if (sectionId === 'sub-admin-finances') {
-                renderTop10Ventes();
-                renderAdminScreen();
-            } else if (sectionId === 'sub-admin-logistique') {
-                renderRupturesStock();
-                renderRepertoireManquants();
-            }
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        async function openAdminSubSection(sectionId) {
+
+    document.getElementById('admin-main-menu-grid').style.display = 'none';
+
+    const sections = document.querySelectorAll('.admin-section');
+    sections.forEach(sec => sec.style.display = 'none');
+
+    document.getElementById(sectionId).style.display = 'block';
+    document.getElementById('btn-back-to-grid').style.display = 'block';
+
+
+    if (sectionId === "sub-admin-finances") {
+
+        chargerTickets();
+
+    }
+
+
+    if (sectionId === 'sub-admin-finances') {
+
+        renderTop10Ventes();
+        renderAdminScreen();
+
+    } else if (sectionId === 'sub-admin-logistique') {
+
+        await renderRupturesStock();
+
+        await renderRepertoireManquants();
+
+        await afficherInventaireEnCours();
+
+        await chargerHistoriqueInventaires();
+
+    }
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+
+}
 
         function closeAdminSubSection() {
             const sections = document.querySelectorAll('.admin-section');
@@ -888,9 +1900,85 @@
             
             return differenceEnJours <= 60;
         }
+        
+        // =====================================================
+// NOM DE LA PHARMACIE
+// =====================================================
+
+async function obtenirNomPharmacie(){
+
+    const { data, error } = await dbCloud
+        .from("parametres_pharmacie")
+        .select("nom")
+        .eq("id",1)
+        .single();
+
+
+    if(error){
+
+        console.error(error);
+        return "Sekas pharma";
+
+    }
+
+
+    return data.nom || "Sekas pharma";
+
+}
+
+async function obtenirLogoPharmacie(){
+
+    const { data, error } = await dbCloud
+        .from("parametres_pharmacie")
+        .select("logo_url")
+        .eq("id",1)
+        .single();
+
+
+    if(error){
+
+        console.error(error);
+        return "";
+
+    }
+
+
+    return data.logo_url || "";
+
+}
+
+async function obtenirInfosPharmacie(){
+
+    const { data, error } = await dbCloud
+        .from("parametres_pharmacie")
+        .select("*")
+        .eq("id",1)
+        .single();
+
+
+    if(error){
+
+        console.error(error);
+
+        return {
+            nom:"Sekas pharma",
+            adresse:"",
+            telephone:"",
+            email:"",
+            rccm:"",
+            slogan:"",
+            logo_url:""
+        };
+
+    }
+
+
+    return data;
+
+}
 
         function chargerNomPharmacie() {
-            const nomSauvegarde = localStorage.getItem("customPharmacyName") || "Sekas pharma";
+            const nomSauvegarde = obtenirNomPharmacie();
             const headerNom = document.getElementById("header-pharmacy-name");
             const inputNom = document.getElementById("pharmacy-name-input");
             
@@ -950,6 +2038,11 @@
                 
                 if (inv) inventaire = inv;
                 if (users) listeUtilisateurs = users;
+                
+                if (users) {
+    listeUtilisateurs = users;
+    renderUsersList();
+}
 
                 // --- DÉTERMINATION DYNAMIQUE DE L'UTILISATEUR ---
                 let nomConnecte = "";
@@ -1152,6 +2245,7 @@
             try { renderTop10Ventes(); } catch(e) { console.error(e); }
             try { renderRupturesStock(); } catch(e) { console.error(e); }
             try { renderRepertoireManquants(); } catch(e) { console.error(e); }
+            renderPanier();
         }
 
         async function loginApp() {
@@ -1203,6 +2297,127 @@
             document.getElementById("login-screen").style.display = "block";
             document.getElementById('role-text').innerText = "Veuillez vous connecter";
         }
+        
+        async function chargerInfosPharmacie() {
+
+    const { data, error } = await dbCloud
+        .from("parametres_pharmacie")
+        .select("*")
+        .eq("id", 1)
+        .single();
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+        document.getElementById("pharmacy-name-input").value = data.nom || "";
+    document.getElementById("pharmacy-address").value = data.adresse || "";
+    document.getElementById("pharmacy-phone").value = data.telephone || "";
+    document.getElementById("pharmacy-email").value = data.email || "";
+    document.getElementById("pharmacy-rccm").value = data.rccm || "";
+    document.getElementById("pharmacy-slogan").value = data.slogan || "";
+
+    const preview = document.getElementById("logo-preview");
+
+    if (preview) {
+
+        if (data.logo_url) {
+
+            preview.innerHTML = `
+                <img
+                    src="${data.logo_url}"
+                    style="
+                        width:120px;
+                        height:120px;
+                        object-fit:contain;
+                        border-radius:10px;
+                        border:1px solid #ddd;
+                        padding:6px;
+                        background:white;
+                    ">
+            `;
+
+        } else {
+
+            preview.innerHTML = "";
+
+        }
+
+    }
+
+}
+
+async function sauvegarderInfosPharmacie() {
+
+    const nom = document.getElementById("pharmacy-name-input").value.trim();
+    const adresse = document.getElementById("pharmacy-address").value.trim();
+    const telephone = document.getElementById("pharmacy-phone").value.trim();
+    const email = document.getElementById("pharmacy-email").value.trim();
+    const rccm = document.getElementById("pharmacy-rccm").value.trim();
+    const slogan = document.getElementById("pharmacy-slogan").value.trim();
+
+    let logoUrl = null;
+
+    const inputLogo = document.getElementById("pharmacy-logo");
+
+    if (inputLogo && inputLogo.files.length > 0) {
+
+        const fichier = inputLogo.files[0];
+
+        const nomFichier = Date.now() + "_" + fichier.name.replace(/\s+/g, "_");
+
+        const { error: uploadError } = await dbCloud.storage
+            .from("logos")
+            .upload(nomFichier, fichier, {
+                upsert: true
+            });
+
+        if (uploadError) {
+            alert("Erreur upload logo : " + uploadError.message);
+            return;
+        }
+
+        const { data } = dbCloud.storage
+            .from("logos")
+            .getPublicUrl(nomFichier);
+
+        logoUrl = data.publicUrl;
+    }
+        if (!logoUrl) {
+
+        const { data: ancienne } = await dbCloud
+            .from("parametres_pharmacie")
+            .select("logo_url")
+            .eq("id", 1)
+            .single();
+
+        logoUrl = ancienne?.logo_url || null;
+    }
+
+    const { error } = await dbCloud
+        .from("parametres_pharmacie")
+        .upsert([{
+            id: 1,
+            nom: nom,
+            adresse: adresse,
+            telephone: telephone,
+            email: email,
+            rccm: rccm,
+            slogan: slogan,
+            logo_url: logoUrl
+        }]);
+
+    if (error) {
+        console.error(error);
+        alert("Erreur : " + error.message);
+        return;
+    }
+
+    alert("✅ Informations de la pharmacie enregistrées.");
+
+    await chargerInfosPharmacie();
+}
 
         function extraireDateCible() {
             let dateCible = document.getElementById("date-fin")?.value;
@@ -1213,6 +2428,175 @@
             }
             return dateCible;
         }
+        
+        async function exporterDonnees() {
+    try {
+
+        const { data: inventaireData, error: errInv } =
+            await dbCloud.from("inventaire").select("*");
+
+        const { data: ventesData, error: errVentes } =
+            await dbCloud.from("historique_ventes").select("*");
+
+        const { data: mouvementsData, error: errMouv } =
+            await dbCloud.from("mouvements_stock").select("*");
+
+        const { data: utilisateursData, error: errUsers } =
+            await dbCloud.from("utilisateurs").select("*");
+
+        if (errInv) throw errInv;
+        if (errVentes) throw errVentes;
+        if (errMouv) throw errMouv;
+        if (errUsers) throw errUsers;
+
+        const sauvegarde = {
+            version: 1,
+            date: new Date().toISOString(),
+            inventaire: inventaireData,
+            historique_ventes: ventesData,
+            mouvements_stock: mouvementsData,
+            utilisateurs: utilisateursData
+        };
+
+        const json = JSON.stringify(sauvegarde, null, 2);
+
+        const blob = new Blob([json], {
+            type: "application/json"
+        });
+
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+
+        const maintenant = new Date();
+
+        const nom =
+            "PharmaSys_Sauvegarde_" +
+            maintenant.toISOString().replace(/[:.]/g, "-") +
+            ".json";
+
+        a.href = url;
+        a.download = nom;
+
+        document.body.appendChild(a);
+
+        a.click();
+
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+
+        alert("✅ Sauvegarde exportée avec succès.");
+
+    } catch (e) {
+
+        console.error(e);
+
+        alert("Erreur pendant la sauvegarde : " + e.message);
+
+    }
+}
+
+async function importerDonnees(event) {
+
+    const fichier = event.target.files[0];
+    if (!fichier) return;
+
+    if (!confirm(
+        "⚠️ Toutes les données actuelles seront remplacées.\n\nUne sauvegarde automatique sera créée avant la restauration.\n\nContinuer ?"
+    )) {
+        event.target.value = "";
+        return;
+    }
+
+    try {
+
+        // Sauvegarde automatique
+        await exporterDonnees();
+
+        const texte = await fichier.text();
+        const sauvegarde = JSON.parse(texte);
+
+        if (
+            !sauvegarde.inventaire ||
+            !sauvegarde.historique_ventes ||
+            !sauvegarde.mouvements_stock ||
+            !sauvegarde.utilisateurs
+        ) {
+            throw new Error("Le fichier n'est pas une sauvegarde PharmaSys.");
+        }
+
+        // Suppression
+        let r;
+
+        r = await dbCloud.from("historique_ventes").delete().neq("id", "");
+        if (r.error) throw r.error;
+
+        r = await dbCloud.from("mouvements_stock").delete().gt("id", 0);
+        if (r.error) throw r.error;
+
+        r = await dbCloud.from("utilisateurs").delete().gt("id", 0);
+        if (r.error) throw r.error;
+
+        r = await dbCloud.from("inventaire").delete().gt("id", 0);
+        if (r.error) throw r.error;
+
+        // Réimport Inventaire
+        if (sauvegarde.inventaire.length) {
+            r = await dbCloud
+                .from("inventaire")
+                .insert(sauvegarde.inventaire);
+
+            if (r.error) throw r.error;
+        }
+
+        // Réimport Utilisateurs
+        if (sauvegarde.utilisateurs.length) {
+            r = await dbCloud
+                .from("utilisateurs")
+                .insert(sauvegarde.utilisateurs);
+
+            if (r.error) throw r.error;
+        }
+
+        // Réimport Historique
+        if (sauvegarde.historique_ventes.length) {
+            r = await dbCloud
+                .from("historique_ventes")
+                .insert(sauvegarde.historique_ventes);
+
+            if (r.error) throw r.error;
+        }
+
+        // Réimport Mouvements
+        if (sauvegarde.mouvements_stock.length) {
+            r = await dbCloud
+                .from("mouvements_stock")
+                .insert(sauvegarde.mouvements_stock);
+
+            if (r.error) throw r.error;
+        }
+
+        await chargerDonnees();
+
+        alert("✅ Toutes les données ont été restaurées avec succès.");
+
+    }
+    catch (err) {
+
+        console.error(err);
+
+        alert(
+            "❌ La restauration a échoué.\n\n" +
+            err.message +
+            "\n\nLes données actuelles n'ont peut-être été restaurées que partiellement."
+        );
+
+    }
+
+    event.target.value = "";
+
+}
 
         async function reinitialiserVentesCloud() {
             if(confirm("🚨 ATTENTION : Voulez-vous vraiment vider tout l'historique des ventes et remettre les statistiques à 0 ? Cette action effacera les données de vente de Supabase.")) {
@@ -1233,31 +2617,54 @@
             }
         }
 
-        async function enregistrerMouvementCloud(type, produit, quantite, avant, apres, observation="") {
-            const maintenant = new Date();
-            const fragments = maintenant.toLocaleDateString('fr-FR').split('/');
-            const dateFormateeFr = `${fragments[0]}/${fragments[1]}/${fragments[2]} ${maintenant.toLocaleTimeString('fr-FR')}`;
+        async function enregistrerMouvementCloud(
+    type,
+    produit,
+    quantite,
+    avant,
+    apres,
+    observation = "",
+    ticket = null
+) {
 
-            const nouveauMouvement = {
-                created_at: maintenant.toISOString(),
-                date: dateFormateeFr,
-                assistant: utilisateurConnecte ? utilisateurConnecte.nom : "Testeur",
-                produit_id: produit.id,
-                produit: produit.nom,
-                type: type,
-                quantite: nombre(quantite),
-                stock_avant: nombre(avant),
-                stock_apres: nombre(apres),
-                observation: observation
-            };
+    const maintenant = new Date();
 
-            try {
-                const { error } = await dbCloud.from('mouvements_stock').insert([nouveauMouvement]);
-                if (error) throw error;
-            } catch (err) {
-                console.error("Erreur d'enregistrement du mouvement sur Supabase:", err.message);
-            }
-        }
+    const fragments = maintenant
+        .toLocaleDateString("fr-FR")
+        .split("/");
+
+    const dateFormateeFr =
+        `${fragments[0]}/${fragments[1]}/${fragments[2]} ` +
+        maintenant.toLocaleTimeString("fr-FR");
+
+    const mouvement = {
+        date: dateFormateeFr,
+        created_at: maintenant.toISOString(),
+        assistant: utilisateurConnecte.nom,
+        produit_id: Number(produit.id),
+        produit: produit.nom,
+        type: type,
+        quantite: nombre(quantite),
+        stock_avant: nombre(avant),
+        stock_apres: nombre(apres),
+        observation: observation,
+        ticket: ticket
+    };
+
+    const { error } = await dbCloud
+        .from("mouvements_stock")
+        .insert([mouvement]);
+
+    if (error) {
+        console.error(error);
+        alert("Erreur mouvements : " + error.message);
+        return false;
+    }
+
+    console.log("Mouvement enregistré :", mouvement);
+
+    return true;
+}
 
         async function saveUserCloud() {
             const idEdit = document.getElementById("user-id-edit").value;
@@ -1429,43 +2836,216 @@
             }
         }
 
-        function renderRepertoireManquants() {
-            const tbody = document.getElementById("table-body-manquants");
-            if (!tbody) return;
-            tbody.innerHTML = "";
+function badgeStatut(statut){
 
-            const filtreInput = document.getElementById("filter-manquants");
-            const filtreTexte = filtreInput ? filtreInput.value.toLowerCase().trim() : "";
+    switch(statut){
 
-            const manquants = mouvementsStock.filter(m => 
-                m.type === "AJUSTEMENT" && 
-                m.observation && 
-                m.observation.includes("Considéré manquant/vendu sans encaissement")
-            );
+        case "RESOLU":
+            return `<span style="
+                background:#dcfce7;
+                color:#166534;
+                padding:4px 10px;
+                border-radius:20px;
+                font-size:12px;
+                font-weight:bold;
+            ">🟢 Résolu</span>`;
 
-            manquants.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        case "JUSTIFIE":
+            return `<span style="
+                background:#dbeafe;
+                color:#1d4ed8;
+                padding:4px 10px;
+                border-radius:20px;
+                font-size:12px;
+                font-weight:bold;
+            ">🔵 Justifié</span>`;
 
-            let lFiltree = manquants;
-            if (filtreTexte !== "") {
-                lFiltree = manquants.filter(m => m.produit && m.produit.toLowerCase().includes(filtreTexte));
-            }
+        case "A_SUIVRE":
+            return `<span style="
+                background:#f3e8ff;
+                color:#7e22ce;
+                padding:4px 10px;
+                border-radius:20px;
+                font-size:12px;
+                font-weight:bold;
+            ">🟣 À suivre</span>`;
 
-            if (lFiltree.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:12px;">Aucun produit manquant trouvé sur cette période.</td></tr>`;
-                return;
-            }
+        default:
+            return `<span style="
+                background:#fef3c7;
+                color:#92400e;
+                padding:4px 10px;
+                border-radius:20px;
+                font-size:12px;
+                font-weight:bold;
+            ">🟠 À analyser</span>`;
+    }
 
-            lFiltree.forEach(m => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td style="color: var(--text-muted);">${m.date}</td>
-                    <td style="font-weight: 600; color: var(--danger);">${m.produit}</td>
-                    <td style="font-weight: bold; text-align: center; background: #fef2f2; color: var(--danger);">${m.quantite} u.</td>
-                    <td><strong style="color: var(--primary-dark);">${m.assistant}</strong></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+}
+
+        async function renderRepertoireManquants() {
+
+    const tbody = document.getElementById("table-body-manquants");
+
+    if(!tbody) return;
+
+    tbody.innerHTML = "";
+
+    const filtreInput = document.getElementById("filter-manquants");
+
+    const filtreTexte = filtreInput 
+        ? filtreInput.value.toLowerCase().trim()
+        : "";
+
+
+    const {data,error} = await dbCloud
+    .from("controles_inventaire")
+    .select("*")
+    .neq("ecart",0)
+    .order("date_controle",{ascending:false});
+
+
+    if(error){
+
+        console.error(error);
+
+        tbody.innerHTML =
+        `<tr>
+        <td colspan="4">
+        Erreur chargement
+        </td>
+        </tr>`;
+
+        return;
+    }
+
+
+
+    let ecarts = data;
+
+console.log("Contrôles chargés :", ecarts);
+// ================= KPI INVENTAIRE =================
+const pertes = ecarts
+    .filter(c => Number(c.ecart) < 0)
+    .reduce((s, c) => s + Math.abs(Number(c.valeur_ecart || 0)), 0);
+
+const surplus = ecarts
+    .filter(c => Number(c.ecart) > 0)
+    .reduce((s, c) => s + Number(c.valeur_ecart || 0), 0);
+
+const totalControles = ecarts.length;
+
+document.getElementById("kpi-pertes").innerText =
+`${nombre(pertes)} Fc`;
+
+document.getElementById("kpi-surplus").innerText =
+`${nombre(surplus)} Fc`;
+
+const aAnalyser = ecarts
+.filter(c => c.statut === "A_ANALYSER")
+.length;
+
+
+document.getElementById("kpi-controles").innerText =
+totalControles;
+
+document.getElementById("kpi-analyser").innerText =
+aAnalyser;
+
+
+    if(filtreTexte){
+
+        ecarts = ecarts.filter(c =>
+            c.produit_nom
+            .toLowerCase()
+            .includes(filtreTexte)
+        );
+
+    }
+
+
+
+    if(ecarts.length===0){
+
+        tbody.innerHTML =
+        `<tr>
+        <td colspan="4">
+        Aucun écart trouvé.
+        </td>
+        </tr>`;
+
+        return;
+    }
+
+
+
+    ecarts.forEach(c=>{
+
+
+        const tr=document.createElement("tr");
+
+
+        tr.innerHTML=`
+
+        <td>
+        ${new Date(c.date_controle).toLocaleString("fr-FR")}
+        </td>
+
+
+        <td style="font-weight:600;">
+        ${c.produit_nom}
+        </td>
+
+
+        <td>
+        ${c.stock_systeme}
+        </td>
+
+
+        <td>
+        ${c.stock_physique}
+        </td>
+
+
+        <td style="
+        font-weight:bold;
+        color:${c.ecart < 0 ? 'var(--danger)' : 'var(--success)'};
+        ">
+        ${c.ecart} u.
+        </td>
+
+
+        <td>
+        ${c.valeur_ecart || 0} Fc
+        </td>
+
+
+        <td>
+${badgeStatut(c.statut)}
+</td>
+
+
+        <td>
+        ${c.auteur || ""}
+        </td>
+
+<td>
+<button 
+onclick="ouvrirAnalyseInventaire(${c.id})"
+style="
+background:#2563eb;
+width:auto;
+padding:5px 10px;
+">
+🔍 Analyser
+</button>
+</td>
+`;
+        tbody.appendChild(tr);
+
+    });
+
+}
 
         function filtrerCatalogueTableau(texte) {
             filtreTexteTableau = texte.toLowerCase().trim();
@@ -1623,54 +3203,1591 @@
             if (tfootAdm && produitsAafficher.length > 0) tfootAdm.innerHTML = footContent;
         }
 
-        async function lancerControleInventaire(produitId) {
-            const producto = inventaire.find(p => p.id === produitId);
-            if (!producto) return;
 
-            const stockTheorique = nombre(producto.stock);
-            
-            const saisie = prompt(`📦 CONTRÔLE D'INVENTAIRE - ${producto.nom}\n\nStock système actuel : ${stockTheorique} unités.\nCombien de boîtes/unités comptez-vous réellement sur l'étagère ?`);
-            
-            if (saisie === null || saisie.trim() === "") return; 
-            
-            const stockPhysique = nombre(saisie);
-            if (isNaN(stockPhysique) || stockPhysique < 0) {
-                alert("Veuillez saisir une quantité valide positive ou égale à 0.");
-                return;
-            }
 
-            const difference = stockPhysique - stockTheorique;
-            let observation = "";
+        function lancerControleInventaire(produitId) {
 
-            if (difference === 0) {
-                observation = "Contrôle OK. Stock conforme.";
-            } else if (difference < 0) {
-                const manquant = Math.abs(difference);
-                observation = `Inventaire : Écart de -${manquant} unités (Considéré manquant/vendu sans encaissement)`;
-            } else {
-                observation = `Inventaire : Surplus de +${difference} unités constatées en rayon.`;
-            }
+    console.log("Contrôle lancé avec ID :", produitId);
 
-            const dateAujourdhui = extraireDateCible(); 
 
-            try {
-                const { error: errInv } = await dbCloud.from('inventaire').update({ 
-                    stock: stockPhysique,
-                    dernier_controle: dateAujourdhui
-                }).eq('id', producto.id);
+    const producto = inventaire.find(
+        p => p.id == produitId
+    );
 
-                if (errInv) throw errInv;
 
-                await enregistrerMouvementCloud("AJUSTEMENT", producto, Math.abs(difference), stockTheorique, stockPhysique, observation);
+    console.log("Produit trouvé :", producto);
 
-                alert(`✅ Inventaire enregistré pour ${producto.nom} !\nNouveau stock fixé à : ${stockPhysique}\nRésultat : ${observation}`);
-                
-                await chargerDonnees();
 
-            } catch (error) {
-                alert("Erreur lors de la sauvegarde de l'inventaire : " + error.message);
-            }
+
+    if(!producto){
+        alert("Produit introuvable");
+        return;
+    }
+
+
+
+    // Mémoriser le produit actuel
+    produitControleActuel = producto;
+
+
+
+    // Afficher le modal
+    document.getElementById("controle-modal").style.display = "block";
+
+
+
+    // Informations produit
+    document.getElementById("ctrl-produit").innerText =
+        producto.nom;
+
+
+    document.getElementById("ctrl-stock-theorique").innerText =
+        nombre(producto.stock);
+
+
+
+    // Réinitialiser la saisie
+    document.getElementById("ctrl-stock-physique").value = "";
+
+
+
+    // Réinitialiser l'affichage résultat
+
+    document.getElementById("ctrl-resultat").style.display = "none";
+
+
+    document.getElementById("ctrl-stock-saisi").innerText = "0";
+
+    document.getElementById("ctrl-ecart").innerText = "0";
+
+    document.getElementById("ctrl-valeur").innerText = "0 Fc";
+
+
+
+    console.log(
+        "Produit prêt pour contrôle :",
+        produitControleActuel
+    );
+
+}
+
+function fermerControleInventaire(){
+
+    const modal = document.getElementById("controle-modal");
+
+    if(modal){
+        modal.style.display = "none";
+    }
+
+    produitControleActuel = null;
+
+}
+async function demarrerInventaire() {
+
+    inventaireActuel = await recupererOuCreerInventaireEnCours();
+
+    if (!inventaireActuel) {
+        return false;
+    }
+
+    return true;
+
+}
+async function validerControleInventaire() {
+
+    if (!produitControleActuel) {
+        alert("Aucun produit sélectionné");
+        return;
+    }
+
+
+    // Toujours récupérer l'inventaire en cours AVANT l'enregistrement
+    inventaireActuel = await recupererOuCreerInventaireEnCours();
+
+
+    if (!inventaireActuel) {
+        alert("Impossible de récupérer l'inventaire.");
+        return;
+    }
+    
+    if(inventaireActuel.statut === "CLOTURE"){
+
+    alert("Cet inventaire est déjà clôturé.");
+
+    return;
+}
+
+
+    const producto = produitControleActuel;
+
+
+    const stockTheorique = nombre(producto.stock);
+
+
+    const stockPhysique = nombre(
+        document.getElementById("ctrl-stock-physique").value
+    );
+
+
+    if (isNaN(stockPhysique) || stockPhysique < 0) {
+        alert("Stock physique invalide");
+        return;
+    }
+
+
+    const ecart = stockPhysique - stockTheorique;
+
+
+    const valeurEcart = ecart * nombre(producto.pua);
+
+
+
+    console.log({
+        inventaire: inventaireActuel.id,
+        produit: producto.nom,
+        stockTheorique,
+        stockPhysique,
+        ecart,
+        valeurEcart
+    });
+
+
+
+    try {
+
+
+        // =====================================
+        // VERROU : empêcher un double contrôle
+        // du même produit dans le même inventaire
+        // =====================================
+
+        const { data: controleExistant, error: erreurVerification } = await dbCloud
+        .from("controles_inventaire")
+        .select("id")
+        .eq("inventaire_id", inventaireActuel.id)
+        .eq("produit_id", producto.id)
+        .maybeSingle();
+        
+        console.log("🔍 Vérification doublon :", {
+    inventaire_id: inventaireActuel.id,
+    produit_id: producto.id,
+    resultat: controleExistant
+});
+
+
+        if (erreurVerification) {
+            throw erreurVerification;
         }
+
+
+
+        if (controleExistant) {
+
+            alert(
+                "⚠️ Ce médicament a déjà été contrôlé dans cet inventaire."
+            );
+
+            return;
+        }
+
+
+
+
+        // =====================================
+        // ENREGISTREMENT DU CONTRÔLE
+        // =====================================
+
+        const { error } = await dbCloud
+        .from("controles_inventaire")
+        .insert([{
+
+            inventaire_id: inventaireActuel.id,
+
+            produit_id: producto.id,
+
+            produit_nom: producto.nom,
+
+            stock_systeme: stockTheorique,
+
+            stock_physique: stockPhysique,
+
+            ecart: ecart,
+
+            valeur_ecart: valeurEcart,
+
+            statut: ecart === 0
+                ? "CONFORME"
+                : "A_ANALYSER",
+
+            auteur: utilisateurConnecte.nom
+
+        }]);
+
+
+
+        if (error) throw error;
+
+
+
+        console.log("1 - Avant la mise à jour");
+
+
+        await mettreAJourResumeInventaire(inventaireActuel.id);
+
+
+        console.log("2 - Après la mise à jour");
+
+
+
+        fermerControleInventaire();
+
+
+
+        alert(
+            ecart === 0
+                ? "✅ Contrôle terminé. Stock conforme."
+                : "⚠️ Écart détecté. Ajouté aux analyses d'inventaire."
+        );
+
+
+
+    } catch (error) {
+
+
+        console.error(error);
+
+
+        alert(
+            "Erreur enregistrement contrôle : " +
+            error.message
+        );
+
+    }
+
+}
+
+
+async function ouvrirAnalyseInventaire(id){
+
+    const { data, error } = await dbCloud
+    .from("controles_inventaire")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+
+    if(error){
+
+        console.error(error);
+        alert("Impossible de charger ce contrôle");
+        return;
+
+    }
+
+
+    controleAnalyseActuel = data;
+
+
+
+    document.getElementById("analyse-produit").innerText =
+        data.produit_nom;
+
+
+    document.getElementById("analyse-systeme").innerText =
+        data.stock_systeme;
+
+
+    document.getElementById("analyse-reel").innerText =
+        data.stock_physique;
+
+
+    document.getElementById("analyse-ecart").innerText =
+        data.ecart;
+
+
+    document.getElementById("analyse-valeur").innerText =
+        data.valeur_ecart + " Fc";
+
+
+
+    // Charger les anciennes informations si elles existent
+
+    document.getElementById("analyse-cause").value =
+        data.cause || "Erreur de comptage";
+
+
+    document.getElementById("analyse-observation").value =
+        data.observation || "";
+
+
+    document.getElementById("analyse-statut").value =
+        data.statut || "A_SUIVRE";
+
+
+// Action sur le stock
+document.getElementById("analyse-action-stock").value =
+    data.stock_corrige ? "CONSERVER" : "CORRIGER";
+
+const selectAction = document.getElementById("analyse-action-stock");
+
+// Si ce contrôle a déjà été appliqué au stock,
+// on empêche une deuxième correction.
+if(data.stock_corrige){
+
+    selectAction.disabled = true;
+
+}else{
+
+    selectAction.disabled = false;
+
+}
+
+document.getElementById("analyse-inventaire-modal")
+    .style.display = "block";
+
+}
+
+async function chargerDonneesInventaire(id){
+
+    // Chargement de l'inventaire
+    const { data: inventaire, error } = await dbCloud
+        .from("inventaires")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+    if(error){
+        throw error;
+    }
+
+    // Chargement des contrôles
+    const { data: controles, error: erreurControles } = await dbCloud
+        .from("controles_inventaire")
+        .select("*")
+        .eq("inventaire_id", id)
+        .order("date_controle", { ascending: true });
+
+    if(erreurControles){
+        throw erreurControles;
+    }
+
+    return {
+        inventaire,
+        controles: controles || []
+    };
+
+}
+
+
+async function voirInventaire(id){
+
+    const modal = document.getElementById("modal-detail-inventaire");
+    const contenu = document.getElementById("contenu-detail-inventaire");
+
+    contenu.innerHTML = "Chargement...";
+    modal.style.display = "block";
+
+let inventaire;
+let controles;
+
+try{
+
+    const donnees = await chargerDonneesInventaire(id);
+
+    inventaire = donnees.inventaire;
+    controles = donnees.controles;
+
+}catch(error){
+
+    console.error(error);
+    contenu.innerHTML = "Impossible de charger cet inventaire.";
+    return;
+
+}
+
+    const pourcentage = inventaire.nb_produits_actifs > 0
+        ? Math.round((inventaire.nb_produits_controles / inventaire.nb_produits_actifs) * 100)
+        : 0;
+
+    let html = `
+
+    <div style="margin-bottom:20px;">
+
+        <div style="
+        font-size:24px;
+        font-weight:bold;
+        color:#065f46;
+        margin-bottom:10px;
+        ">
+            📦 Inventaire #${inventaire.id}
+        </div>
+
+        <div style="line-height:1.8;color:#555;">
+            <div>👤 <b>Auteur :</b> ${inventaire.auteur}</div>
+
+            <div>
+                📅 <b>Début :</b>
+                ${new Date(inventaire.date_inventaire).toLocaleString("fr-FR")}
+            </div>
+
+            <div>
+                📅 <b>Fin :</b>
+                ${
+                    inventaire.date_cloture
+                    ? new Date(inventaire.date_cloture).toLocaleString("fr-FR")
+                    : "Inventaire en cours"
+                }
+            </div>
+        </div>
+
+    </div>
+
+
+    <div style="
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:12px;
+    margin-bottom:20px;
+    ">
+
+        <div class="card" style="text-align:center;padding:15px;">
+            <div style="font-size:30px;">💊</div>
+            <div style="font-size:24px;font-weight:bold;">
+                ${inventaire.nb_produits_actifs || 0}
+            </div>
+            <div>Produits actifs</div>
+        </div>
+
+        <div class="card" style="text-align:center;padding:15px;">
+            <div style="font-size:30px;">✅</div>
+            <div style="font-size:24px;font-weight:bold;">
+                ${inventaire.nb_produits_controles || 0}
+            </div>
+            <div>Contrôlés</div>
+        </div>
+
+        <div class="card" style="text-align:center;padding:15px;">
+            <div style="font-size:30px;">⚠️</div>
+            <div style="font-size:24px;font-weight:bold;">
+                ${inventaire.nb_ecarts || 0}
+            </div>
+            <div>Écarts</div>
+        </div>
+
+        <div class="card" style="text-align:center;padding:15px;">
+            <div style="font-size:30px;">💸</div>
+            <div style="
+            font-size:20px;
+            font-weight:bold;
+            color:#dc2626;
+            ">
+                ${nombre(inventaire.pertes || 0)} Fc
+            </div>
+            <div>Pertes</div>
+        </div>
+
+        <div class="card" style="text-align:center;padding:15px;">
+            <div style="font-size:30px;">💰</div>
+            <div style="
+            font-size:20px;
+            font-weight:bold;
+            color:#16a34a;
+            ">
+                ${nombre(inventaire.surplus || 0)} Fc
+            </div>
+            <div>Surplus</div>
+        </div>
+
+    </div>
+
+
+    <div style="margin-bottom:20px;">
+
+        <div style="
+        display:flex;
+        justify-content:space-between;
+        font-weight:bold;
+        margin-bottom:6px;
+        ">
+            <span>Progression</span>
+            <span>${pourcentage}%</span>
+        </div>
+
+        <div style="
+        height:16px;
+        background:#e5e7eb;
+        border-radius:10px;
+        overflow:hidden;
+        ">
+
+            <div style="
+            width:${pourcentage}%;
+            height:100%;
+            background:#16a34a;
+            transition:.4s;
+            "></div>
+
+        </div>
+
+        <div style="
+        margin-top:6px;
+        text-align:center;
+        color:#555;
+        ">
+            ${inventaire.nb_produits_controles || 0}
+            /
+            ${inventaire.nb_produits_actifs || 0}
+            produits contrôlés
+        </div>
+
+    </div>
+    
+    <div style="margin-bottom:15px;">
+
+    <input
+        type="text"
+        id="recherche-detail-inventaire"
+        placeholder="🔎 Rechercher un médicament..."
+        oninput="filtrerDetailInventaire()"
+        style="
+        width:100%;
+        padding:12px;
+        border:1px solid #d1d5db;
+        border-radius:10px;
+        font-size:15px;
+        box-sizing:border-box;
+        "
+    >
+
+</div>
+
+<h3 style="
+margin-bottom:10px;
+color:#065f46;
+">
+📋 Contrôles réalisés
+</h3>
+    
+    <h3 style="
+    margin-bottom:10px;
+    color:#065f46;
+    ">
+        📋 Contrôles réalisés
+    </h3>
+    
+    
+  <div style="
+display:flex;
+justify-content:flex-end;
+margin-bottom:15px;
+">
+
+<select
+id="filtre-impression"
+style="
+padding:10px;
+border-radius:8px;
+margin-right:8px;
+">
+
+<option value="TOUS">
+Rapport complet
+</option>
+
+<option value="ECARTS">
+Écarts uniquement
+</option>
+
+<option value="PERTES">
+Pertes uniquement
+</option>
+
+<option value="SURPLUS">
+Surplus uniquement
+</option>
+
+<option value="CONFORMES">
+Produits conformes
+</option>
+
+</select>
+
+<button
+onclick="imprimerInventaire(
+    ${inventaire.id},
+    document.getElementById('filtre-impression').value
+)"
+style="
+background:#2563eb;
+padding:10px 18px;
+width:auto;
+">
+
+🖨 Imprimer
+
+</button
+
+<button
+onclick="exporterInventaireCSV(
+${inventaire.id},
+document.getElementById('filtre-impression').value
+)"
+style="
+background:#16a34a;
+padding:10px 18px;
+width:auto;
+margin-left:8px;
+">
+
+📄 Export CSV
+
+</button>
+
+
+</div>
+    
+
+    <div style="overflow-x:auto;">
+
+    <table class="table">
+
+        <thead>
+
+            <tr>
+
+                <th>Date</th>
+
+                <th>Médicament</th>
+
+                <th>Théorique</th>
+
+                <th>Physique</th>
+
+                <th>Écart</th>
+
+                <th>Valeur</th>
+
+                <th>Statut</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+    `;
+
+    controles.forEach(c=>{
+
+        html += `
+
+        <tr>
+
+            <td>${new Date(c.date_controle).toLocaleString("fr-FR")}</td>
+
+            <td>${c.produit_nom}</td>
+
+            <td>${c.stock_systeme}</td>
+
+            <td>${c.stock_physique}</td>
+
+            <td style="
+            font-weight:bold;
+            color:${
+                c.ecart < 0
+                ? "#dc2626"
+                : c.ecart > 0
+                ? "#16a34a"
+                : "#374151"
+            };
+            ">
+                ${c.ecart}
+            </td>
+
+            <td>${nombre(c.valeur_ecart || 0)} Fc</td>
+
+            <td>${badgeStatut(c.statut)}</td>
+
+        </tr>
+
+        `;
+
+    });
+
+    html += `
+
+        </tbody>
+
+    </table>
+
+    </div>
+
+    `;
+
+    contenu.innerHTML = html;
+
+}
+
+
+
+function filtrerDetailInventaire(){
+
+    const filtre = document
+        .getElementById("recherche-detail-inventaire")
+        .value
+        .toLowerCase();
+
+    const lignes = document.querySelectorAll(
+        "#contenu-detail-inventaire tbody tr"
+    );
+
+    lignes.forEach(ligne=>{
+
+        const texte = ligne.innerText.toLowerCase();
+
+        ligne.style.display =
+            texte.includes(filtre)
+            ? ""
+            : "none";
+
+    });
+
+}
+
+function fermerDetailInventaire(){
+
+    document.getElementById("modal-detail-inventaire").style.display = "none";
+
+}
+
+
+async function afficherInventaireEnCours(){
+
+    const zone = document.getElementById("inventaire-en-cours-info");
+
+    if(!zone) return;
+
+
+    const { data, error } = await dbCloud
+    .from("inventaires")
+    .select("*")
+    .eq("statut","EN_COURS")
+    .order("date_inventaire",{ascending:false})
+    .limit(1);
+
+
+    if(error){
+        console.error(error);
+        return;
+    }
+
+
+    if(!data || data.length===0){
+
+        zone.innerHTML=`
+        <div style="color:#718096;">
+            Aucun inventaire en cours.
+        </div>`;
+
+        return;
+    }
+
+
+    const inv = data[0];
+
+
+    // ===============================
+    // PRODUITS ACTIFS
+    // ===============================
+    const { count: produitsActifs } = await dbCloud
+    .from("inventaire")
+    .select("*",{count:"exact",head:true})
+    .eq("actif",true);
+
+
+
+    // ===============================
+    // PRODUITS ARCHIVÉS
+    // ===============================
+    const { count: produitsArchives } = await dbCloud
+    .from("inventaire")
+    .select("*",{count:"exact",head:true})
+    .eq("actif",false);
+
+
+
+    // ===============================
+    // CONTRÔLES DE L'INVENTAIRE
+    // ===============================
+    const { data: controles } = await dbCloud
+    .from("controles_inventaire")
+    .select("produit_id,ecart,valeur_ecart")
+    .eq("inventaire_id",inv.id);
+
+
+    const liste = controles || [];
+
+
+
+    // Contrôles uniques
+    const produitsControles = [
+        ...new Set(
+            liste.map(c=>c.produit_id)
+        )
+    ];
+
+
+    const nbControles = produitsControles.length;
+
+
+
+    const pourcentage = produitsActifs > 0
+    ? Math.round((nbControles / produitsActifs) * 100)
+    : 0;
+
+
+
+    // ===============================
+    // ÉCARTS
+    // ===============================
+
+    const nbEcarts = liste
+    .filter(c=>Number(c.ecart)!==0)
+    .length;
+
+
+
+    const pertes = liste
+    .filter(c=>Number(c.ecart)<0)
+    .reduce(
+        (s,c)=>s+Math.abs(Number(c.valeur_ecart||0)),
+        0
+    );
+
+
+
+    const surplus = liste
+    .filter(c=>Number(c.ecart)>0)
+    .reduce(
+        (s,c)=>s+Number(c.valeur_ecart||0),
+        0
+    );
+
+
+
+    zone.innerHTML = `
+
+    <div style="line-height:1.9;">
+
+        <div>
+            <b>🆔 Inventaire :</b> #${inv.id}
+        </div>
+
+
+        <div>
+            <b>📅 Début :</b>
+            ${new Date(inv.date_inventaire).toLocaleString("fr-FR")}
+        </div>
+
+
+        <div>
+            <b>👤 Auteur :</b>
+            ${inv.auteur}
+        </div>
+
+
+        <hr>
+
+
+        <div>
+            <b>💊 Produits actifs :</b>
+            ${produitsActifs}
+        </div>
+
+
+        <div>
+            <b>📦 Produits archivés :</b>
+            ${produitsArchives}
+        </div>
+
+
+        <div>
+            <b>✅ Produits contrôlés :</b>
+            ${nbControles} / ${produitsActifs}
+        </div>
+
+
+        <div>
+            <b>📈 Avancement :</b>
+            ${pourcentage} %
+        </div>
+
+
+        <div>
+            <b>⚠️ Écarts :</b>
+            ${nbEcarts}
+        </div>
+
+
+        <div>
+            <b>💸 Pertes :</b>
+            ${nombre(pertes)} Fc
+        </div>
+
+
+        <div>
+            <b>💰 Surplus :</b>
+            ${nombre(surplus)} Fc
+        </div>
+
+
+
+        <div style="
+            margin-top:12px;
+            height:14px;
+            background:#e5e7eb;
+            border-radius:8px;
+            overflow:hidden;
+        ">
+
+            <div style="
+                width:${pourcentage}%;
+                height:100%;
+                background:#16a34a;
+                transition:.3s;
+            "></div>
+
+        </div>
+
+
+
+        <div style="
+            text-align:center;
+            margin-top:6px;
+            font-weight:bold;
+            color:#16a34a;
+        ">
+            ${pourcentage} %
+        </div>
+
+
+
+        <div style="
+            margin-top:10px;
+            color:#16a34a;
+            font-weight:bold;
+        ">
+            🟢 Inventaire actuellement en cours
+        </div>
+
+
+    </div>
+
+    `;
+
+}
+async function chargerHistoriqueInventaires(){
+
+    const tbody = document.getElementById("table-body-historique-inventaires");
+
+    if(!tbody) return;
+
+    tbody.innerHTML = "";
+
+    const filtre = (
+        document.getElementById("filter-historique-inventaire")?.value || ""
+    ).toLowerCase().trim();
+
+
+    const { data, error } = await dbCloud
+    .from("inventaires")
+    .select("*")
+    .order("date_inventaire",{ascending:false});
+
+
+    if(error){
+
+        console.error(error);
+
+        tbody.innerHTML=`
+        <tr>
+            <td colspan="10">
+                Erreur de chargement.
+            </td>
+        </tr>`;
+
+        return;
+
+    }
+
+
+    let inventaires = data || [];
+
+
+    if(filtre){
+
+        inventaires = inventaires.filter(inv =>
+
+            String(inv.id).includes(filtre) ||
+
+            (inv.auteur || "")
+            .toLowerCase()
+            .includes(filtre)
+
+        );
+
+    }
+
+
+    if(inventaires.length===0){
+
+        tbody.innerHTML=`
+        <tr>
+            <td colspan="10">
+                Aucun inventaire.
+            </td>
+        </tr>`;
+
+        return;
+
+    }
+
+
+    inventaires.forEach(inv=>{
+
+        const tr=document.createElement("tr");
+
+        const statut = inv.statut==="CLOTURE"
+
+        ? `<span style="color:#16a34a;font-weight:bold;">✅ Clôturé</span>`
+
+        : `<span style="color:#2563eb;font-weight:bold;">🟢 En cours</span>`;
+
+
+        tr.innerHTML=`
+
+        <td>#${inv.id}</td>
+
+        <td>
+            ${new Date(inv.date_inventaire).toLocaleString("fr-FR")}
+        </td>
+
+        <td>
+            ${
+                inv.date_cloture
+                ? new Date(inv.date_cloture).toLocaleString("fr-FR")
+                : "-"
+            }
+        </td>
+
+        <td>
+            ${inv.nb_produits_actifs || 0}
+        </td>
+
+        <td>
+            ${inv.nb_produits_controles || 0}
+        </td>
+
+        <td>
+            ${inv.nb_ecarts || 0}
+        </td>
+
+        <td>
+            ${nombre(inv.pertes || 0)} Fc
+        </td>
+
+        <td>
+            ${nombre(inv.surplus || 0)} Fc
+        </td>
+
+        <td>
+            ${statut}
+        </td>
+
+        <td>
+
+            <button
+            onclick="voirInventaire(${inv.id})"
+            style="
+                background:#2563eb;
+                width:auto;
+                padding:5px 10px;
+            ">
+                👁 Voir
+            </button>
+
+        </td>
+
+        `;
+
+        tbody.appendChild(tr);
+
+    });
+
+}
+
+
+function fermerAnalyseInventaire(){
+
+    document.getElementById("analyse-inventaire-modal")
+    .style.display = "none";
+
+
+    controleAnalyseActuel = null;
+
+}
+
+async function mettreAJourResumeInventaire(inventaireId){
+
+    console.log("➡️ mettreAJourResumeInventaire appelée", inventaireId);
+
+
+    // ================================
+    // PRODUITS ACTIFS
+    // ================================
+    const { count: totalActifs, error: errActifs } = await dbCloud
+    .from("inventaire")
+    .select("*", { count:"exact", head:true })
+    .eq("actif", true);
+
+
+    if(errActifs){
+        console.error("Erreur produits actifs :", errActifs);
+        return;
+    }
+
+
+    // ================================
+    // PRODUITS ARCHIVÉS
+    // ================================
+    const { count: totalArchives } = await dbCloud
+    .from("inventaire")
+    .select("*", { count:"exact", head:true })
+    .eq("actif", false);
+
+
+
+    // ================================
+    // CONTRÔLES DE CET INVENTAIRE
+    // ================================
+    const { data: controles, error: errControles } = await dbCloud
+    .from("controles_inventaire")
+    .select("produit_id, ecart, valeur_ecart")
+    .eq("inventaire_id", inventaireId);
+
+
+    if(errControles){
+        console.error("Erreur contrôles :", errControles);
+        return;
+    }
+
+
+    const listeControles = controles || [];
+
+
+    // ================================
+    // PRODUITS CONTRÔLÉS UNIQUES
+    // ================================
+    const produitsControlesUniques = [
+        ...new Set(
+            listeControles.map(c => c.produit_id)
+        )
+    ];
+
+
+    const nbControles = produitsControlesUniques.length;
+
+
+
+    // ================================
+    // ÉCARTS
+    // ================================
+    const nbEcarts = listeControles
+    .filter(c => Number(c.ecart) !== 0)
+    .length;
+
+
+
+    // ================================
+    // PERTES
+    // ================================
+    const pertes = listeControles
+    .filter(c => Number(c.ecart) < 0)
+    .reduce(
+        (s,c)=>s + Math.abs(Number(c.valeur_ecart || 0)),
+        0
+    );
+
+
+
+    // ================================
+    // SURPLUS
+    // ================================
+    const surplus = listeControles
+    .filter(c => Number(c.ecart) > 0)
+    .reduce(
+        (s,c)=>s + Number(c.valeur_ecart || 0),
+        0
+    );
+
+
+
+    // ================================
+    // AVANCEMENT
+    // ================================
+    const avancement = totalActifs > 0
+    ? Number(((nbControles / totalActifs) * 100).toFixed(2))
+    : 0;
+    
+    // =================================
+// CLÔTURE AUTOMATIQUE INVENTAIRE
+// =================================
+
+let nouveauStatut = "EN_COURS";
+let dateCloture = null;
+
+console.log("Vérification clôture :", {
+    contrôlés: nbControles,
+    actifs: totalActifs
+});
+
+if(nbControles >= totalActifs && totalActifs > 0){
+
+    nouveauStatut = "CLOTURE";
+
+    dateCloture = new Date().toISOString();
+
+    console.log("✅ Inventaire terminé automatiquement");
+
+}
+
+// ================================
+// MISE À JOUR INVENTAIRE
+// ================================
+const { error } = await dbCloud
+.from("inventaires")
+.update({
+
+    nb_produits_actifs: totalActifs,
+
+    nb_produits_controles: nbControles,
+
+    avancement: avancement,
+
+    nb_ecarts: nbEcarts,
+
+    pertes: pertes,
+
+    surplus: surplus,
+
+    statut: nouveauStatut,
+
+    date_cloture: dateCloture
+
+})
+.eq("id", inventaireId);
+
+
+
+    if(error){
+        console.error("Erreur mise à jour inventaire :", error);
+        return;
+    }
+
+
+
+    console.log("Résumé inventaire mis à jour :", {
+
+        inventaireId,
+
+        produitsActifs: totalActifs,
+
+        produitsArchives: totalArchives,
+
+        produitsControles: nbControles,
+
+        nbEcarts,
+
+        pertes,
+
+        surplus,
+
+        avancement: avancement + "%"
+
+    });
+
+
+    console.log("✅ Résumé inventaire mis à jour");
+
+}
+
+async function enregistrerAnalyseInventaire(){
+
+    if(!controleAnalyseActuel){
+        alert("Aucun contrôle sélectionné");
+        return;
+    }
+
+    if(controleAnalyseActuel.stock_corrige){
+
+        // Ce contrôle a déjà corrigé le stock.
+        // On autorisera seulement la modification
+        // de la cause, de l'observation et du statut.
+
+    }else{
+
+        // Ce contrôle n'a jamais corrigé le stock.
+        // Si l'utilisateur choisit "CORRIGER",
+        // on mettra à jour le stock puis
+        // on enregistrera le mouvement.
+
+    }
+    const cause =
+    document.getElementById("analyse-cause").value;
+
+    const observation =
+    document.getElementById("analyse-observation").value;
+
+    const statut =
+    document.getElementById("analyse-statut").value;
+
+    const actionStock =
+    document.getElementById("analyse-action-stock").value;
+
+
+
+    // Mise à jour de l'analyse
+    const { error } = await dbCloud
+    .from("controles_inventaire")
+    .update({
+
+        cause: cause,
+
+        observation: observation,
+
+        statut: statut,
+
+        stock_corrige: actionStock === "CORRIGER"
+
+    })
+    .eq("id", controleAnalyseActuel.id);
+
+
+    if(error){
+
+        console.error(error);
+
+        alert(
+        "Erreur lors de l'enregistrement : "
+        + error.message
+        );
+
+        return;
+
+    }
+
+
+
+    // Si l'administrateur décide de corriger le stock
+    if(actionStock === "CORRIGER"){
+
+        const stockAvant =
+        nombre(controleAnalyseActuel.stock_systeme);
+
+        const stockApres =
+        nombre(controleAnalyseActuel.stock_physique);
+
+
+        // Mise à jour du stock
+        const { error: errStock } = await dbCloud
+        .from("inventaire")
+        .update({
+            stock: stockApres
+        })
+        .eq("id", controleAnalyseActuel.produit_id);
+
+
+        if(errStock){
+
+            alert("Erreur correction stock : " + errStock.message);
+            return;
+
+        }
+
+
+        // Enregistrer le mouvement
+        await enregistrerMouvementCloud(
+
+            "AJUSTEMENT_INVENTAIRE",
+
+            {
+                id: controleAnalyseActuel.produit_id,
+                nom: controleAnalyseActuel.produit_nom
+            },
+
+            Math.abs(controleAnalyseActuel.ecart),
+
+            stockAvant,
+
+            stockApres,
+
+            "Correction après analyse d'inventaire"
+
+        );
+
+    }
+
+
+
+    alert("✅ Analyse enregistrée avec succès");
+
+
+    fermerAnalyseInventaire();
+
+
+    await chargerDonnees();
+
+    await renderRepertoireManquants();
+
+}
+async function recupererOuCreerInventaireEnCours(){
+
+    // Chercher un inventaire déjà ouvert
+    const { data: inventaireOuvert, error } = await dbCloud
+    .from("inventaires")
+    .select("*")
+    .eq("statut", "EN_COURS")
+    .order("date_inventaire", { ascending: false })
+    .limit(1);
+
+    if(error){
+
+        console.error(error);
+
+    }
+
+    if(inventaireOuvert && inventaireOuvert.length > 0){
+
+        inventaireActuel = inventaireOuvert[0];
+
+        return inventaireActuel;
+
+    }
+
+    // Aucun inventaire ouvert : on en crée un
+    const { data: nouveau, error: erreurCreation } = await dbCloud
+    .from("inventaires")
+    .insert([{
+
+        auteur: utilisateurConnecte.nom,
+        statut: "EN_COURS"
+
+    }])
+    .select()
+    .single();
+
+    if(erreurCreation){
+
+        console.error(erreurCreation);
+
+        alert("Impossible de créer un inventaire.");
+
+        return null;
+
+    }
+
+    inventaireActuel = nouveau;
+
+    return inventaireActuel;
+
+}
+
+async function cloturerInventaire(){
+
+    if(!inventaireActuel){
+
+        alert("Aucun inventaire en cours.");
+
+        return;
+
+    }
+
+
+    const { data, error } = await dbCloud
+    .from("controles_inventaire")
+    .select("*")
+    .eq("inventaire_id", inventaireActuel.id);
+
+
+    if(error){
+
+        console.error(error);
+
+        alert("Impossible de clôturer l'inventaire.");
+
+        return;
+
+    }
+
+
+    const nbProduits = data.length;
+
+    const nbEcarts = data.filter(c => Number(c.ecart) !== 0).length;
+
+    const pertes = data
+        .filter(c => Number(c.ecart) < 0)
+        .reduce((s,c)=> s + Math.abs(Number(c.valeur_ecart || 0)),0);
+
+    const surplus = data
+        .filter(c => Number(c.ecart) > 0)
+        .reduce((s,c)=> s + Number(c.valeur_ecart || 0),0);
+
+
+    const { error:updateError } = await dbCloud
+    .from("inventaires")
+    .update({
+
+        nb_produits: nbProduits,
+
+        nb_ecarts: nbEcarts,
+
+        pertes: pertes,
+
+        surplus: surplus
+
+    })
+    .eq("id", inventaireActuel.id);
+
+
+    if(updateError){
+
+        console.error(updateError);
+
+        alert("Erreur lors de la clôture.");
+
+        return;
+
+    }
+
+
+    alert(
+`✅ Inventaire clôturé.
+
+Produits contrôlés : ${nbProduits}
+
+Écarts : ${nbEcarts}
+
+Pertes : ${nombre(pertes)} Fc
+
+Surplus : ${nombre(surplus)} Fc`
+    );
+
+
+    inventaireActuel = null;
+
+}
+
+
 
         function searchProduct(query, mode) {
             const resultsDiv = document.getElementById(`${mode}-search-results`);
@@ -1751,54 +4868,549 @@
                 document.getElementById('focus-nom').style.color = 'var(--primary-dark)';
             }
         }
+        function ajouterAuPanier() {
 
-        async function processSale() {
-            if (!utilisateurConnecte || !selectedProductIdAst) return;
+    if (!selectedProductIdAst) return;
 
-            const qty = nombre(document.getElementById("sale-qty").value);
-            const produit = inventaire.find(p => p.id == selectedProductIdAst);
+    const produit = inventaire.find(p => p.id == selectedProductIdAst);
 
-            if (!produit || isNaN(qty) || qty <= 0 || qty > nombre(produit.stock)) { alert("Quantité incorrecte ou stock insuffisant."); return; }
+    if (!produit) return;
 
-            const idVente = "V" + Date.now().toString().slice(-6);
-            const avant = nombre(produit.stock);
-            const apres = nombre((avant - qty).toFixed(2)); 
+    const qty = nombre(document.getElementById("sale-qty").value);
 
-            await dbCloud.from('inventaire').update({ stock: apres }).eq('id', produit.id);
+    if (isNaN(qty) || qty <= 0) {
+        alert("Quantité incorrecte.");
+        return;
+    }
 
-            const maintenant = new Date();
-            const offset = maintenant.getTimezoneOffset();
-            const dateLocale = new Date(maintenant.getTime() - (offset * 60 * 1000)).toISOString().split("T")[0];
-            const heureLocale = maintenant.toLocaleTimeString("fr-FR");
+    if (qty > nombre(produit.stock)) {
+        alert("Stock insuffisant.");
+        return;
+    }
 
-            const pvu = nombre(produit.pvu || 0);
-            const pua = nombre(produit.pua || 0);
-            const totalCalculated = nombre((qty * pvu).toFixed(2));
-            const profitCalculated = nombre((qty * (pvu - pua)).toFixed(2));
+    const existe = panier.find(l => l.id == produit.id);
 
-            await dbCloud.from('historique_ventes').insert([{
-                id: idVente,
-                date: dateLocale, 
-                heure: heureLocale, 
-                assistant: utilisateurConnecte.nom,
-                assistant_id: utilisateurConnecte.id,
-                produit_id: produit.id,
-                nom: produit.nom,
-                quantite: qty,
-                pua: pua,
-                pvu: pvu,
-                total: totalCalculated,
-                profit: profitCalculated,
-                statut: "VALIDE"
-            }]);
+    if (existe) {
 
-            await enregistrerMouvementCloud("VENTE", produit, qty, avant, apres, "Vente " + idVente);
-            
-            document.getElementById("sale-qty").value = 1;
-            document.getElementById("ast-selected-area").style.display = "none";
-            selectedProductIdAst = null;
-            await chargerDonnees();
+        if (existe.quantite + qty > nombre(produit.stock)) {
+            alert("Stock insuffisant.");
+            return;
         }
+
+        existe.quantite += qty;
+
+    } else {
+
+        panier.push({
+    id: produit.id,
+    nom: produit.nom,
+    pua: nombre(produit.pua),
+    pvu: nombre(produit.pvu),
+    quantite: qty,
+    stock: nombre(produit.stock)
+});
+
+    }
+
+    renderPanier();
+
+    document.getElementById("sale-qty").value = 1;
+
+    document.getElementById("ast-selected-area").style.display = "none";
+
+    selectedProductIdAst = null;
+}
+
+async function validerPanier() {
+
+    if (!utilisateurConnecte) {
+        alert("Utilisateur non connecté.");
+        return;
+    }
+
+    if (panier.length === 0) {
+        alert("Le panier est vide.");
+        return;
+    }
+
+    try {
+
+        const numeroTicket = genererNumeroTicket();
+
+        const maintenant = new Date();
+
+        const offset = maintenant.getTimezoneOffset();
+
+        const dateLocale = new Date(
+            maintenant.getTime() - offset * 60000
+        ).toISOString().split("T")[0];
+
+        const heureLocale = maintenant.toLocaleTimeString("fr-FR");
+
+        let montantTotal = 0;
+
+        let beneficeTotal = 0;
+
+        let nbArticles = 0;
+
+        // Vérification du stock AVANT toute écriture
+
+        for (const ligne of panier) {
+
+            const produit = inventaire.find(p => p.id == ligne.id);
+
+            if (!produit) {
+                alert("Produit introuvable : " + ligne.nom);
+                return;
+            }
+
+            if (Number(produit.stock) < Number(ligne.quantite)) {
+
+                alert(
+                    "Stock insuffisant pour " +
+                    produit.nom
+                );
+
+                return;
+            }
+
+            montantTotal += Number(ligne.quantite) * Number(ligne.pvu);
+
+            beneficeTotal +=
+                Number(ligne.quantite) *
+                (Number(ligne.pvu) - Number(ligne.pua));
+
+            nbArticles += Number(ligne.quantite);
+
+        }
+
+        const { error: errTicket } =
+            await dbCloud
+                .from("tickets")
+                .insert([{
+
+                    id: numeroTicket,
+
+                    date: dateLocale,
+
+                    heure: heureLocale,
+
+                    assistant: utilisateurConnecte.nom,
+
+                    assistant_id: utilisateurConnecte.id,
+
+                    nb_articles: nbArticles,
+
+                    montant_total: montantTotal,
+
+                    benefice_total: beneficeTotal,
+
+                    statut: "VALIDE"
+
+                }]);
+
+        if (errTicket) {
+
+            alert(errTicket.message);
+
+            return;
+
+        }
+
+        for (const ligne of panier) {
+                      const produit = inventaire.find(p => p.id == ligne.id);
+
+            const avant = Number(produit.stock);
+
+            const apres = Number(
+                (avant - Number(ligne.quantite)).toFixed(2)
+            );
+
+            const total = Number(
+                (
+                    Number(ligne.quantite) *
+                    Number(ligne.pvu)
+                ).toFixed(2)
+            );
+
+            const profit = Number(
+                (
+                    Number(ligne.quantite) *
+                    (
+                        Number(ligne.pvu) -
+                        Number(ligne.pua)
+                    )
+                ).toFixed(2)
+            );
+
+            // Mise à jour du stock
+
+            const { error: errStock } =
+                await dbCloud
+                    .from("inventaire")
+                    .update({
+                        stock: apres
+                    })
+                    .eq("id", produit.id);
+
+            if (errStock) {
+
+                alert(errStock.message);
+
+                return;
+
+            }
+
+            // Historique (compatibilité)
+
+            const { error: errHistorique } =
+                await dbCloud
+                    .from("historique_ventes")
+                    .insert([{
+
+                        id:
+                            numeroTicket +
+                            "-" +
+                            produit.id,
+
+                        date: dateLocale,
+
+                        heure: heureLocale,
+
+                        assistant:
+                            utilisateurConnecte.nom,
+
+                        assistant_id:
+                            utilisateurConnecte.id,
+
+                        produit_id: produit.id,
+
+                        nom: produit.nom,
+
+                        quantite: ligne.quantite,
+
+                        pua: ligne.pua,
+
+                        pvu: ligne.pvu,
+
+                        total: total,
+
+                        profit: profit,
+
+                        statut: "VALIDE"
+
+                    }]);
+
+            if (errHistorique) {
+
+                alert(errHistorique.message);
+
+                return;
+
+            }
+
+            // Ligne du ticket
+
+            const { error: errLigne } =
+                await dbCloud
+                    .from("ticket_lignes")
+                    .insert([{
+
+                        ticket_id: numeroTicket,
+
+                        produit_id: produit.id,
+
+                        nom: produit.nom,
+
+                        quantite: ligne.quantite,
+
+                        pua: ligne.pua,
+
+                        pvu: ligne.pvu,
+
+                        total: total,
+
+                        profit: profit,
+
+                        statut: "VALIDE"
+
+                    }]);
+
+            if (errLigne) {
+
+                alert(errLigne.message);
+
+                return;
+
+            }
+
+            // Mouvement de stock
+
+            const ok =
+                await enregistrerMouvementCloud(
+
+                    "VENTE",
+
+                    produit,
+
+                    ligne.quantite,
+
+                    avant,
+
+                    apres,
+
+                    "Vente " + numeroTicket,
+
+                    numeroTicket
+
+                );
+
+            if (!ok) return;
+
+        }
+                panier = [];
+
+        renderPanier();
+
+        document.getElementById("sale-qty").value = 1;
+
+        document.getElementById("ast-selected-area").style.display = "none";
+
+        selectedProductIdAst = null;
+
+        await chargerDonnees();
+
+        alert(
+            "✅ Vente enregistrée avec succès.\n\n" +
+            "Ticket : " + numeroTicket
+        );
+
+    } catch (err) {
+
+        console.error("Erreur validerPanier :", err);
+
+        alert(
+            "Erreur : " +
+            (err.message || err)
+        );
+
+    }
+
+}
+
+function genererNumeroTicket() {
+
+    const maintenant = new Date();
+
+    const annee = maintenant.getFullYear();
+
+    const mois = String(maintenant.getMonth() + 1).padStart(2, "0");
+
+    const jour = String(maintenant.getDate()).padStart(2, "0");
+
+    const compteur = Date.now().toString().slice(-4);
+
+    return `TK-${annee}${mois}${jour}-${compteur}`;
+
+}
+
+function renderPanier() {
+
+    const liste = document.getElementById("cart-list");
+    const total = document.getElementById("cart-total");
+
+    if (!liste || !total) return;
+
+    liste.innerHTML = "";
+
+    if (panier.length === 0) {
+
+    liste.innerHTML = `
+        <p style="text-align:center;color:#718096;">
+            Le panier est vide.
+        </p>
+    `;
+
+    total.innerText = "0 Fc";
+
+    const resume = document.getElementById("cart-resume");
+    if (resume) {
+        resume.innerHTML = `
+            <div style="text-align:center;color:#718096;">
+                Aucun produit dans le panier.
+            </div>
+        `;
+    }
+
+    return;
+}
+
+    let totalGeneral = 0;
+
+    panier.forEach((item, index) => {
+
+        const sousTotal = item.quantite * item.pvu;
+        totalGeneral += sousTotal;
+
+        liste.innerHTML += `
+            <div class="list-item"
+                 style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #e2e8f0;">
+
+                <div>
+    <strong style="font-size:15px;">💊 ${item.nom}</strong><br>
+
+    <span style="color:#2563eb;font-weight:bold;">
+        💵 Prix : ${nombre(item.pvu)} Fc
+    </span>
+
+    <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+
+        <button onclick="diminuerQuantitePanier(${index})">➖</button>
+
+        <strong style="min-width:30px;text-align:center;">
+            ${item.quantite}
+        </strong>
+
+        <button
+            onclick="augmenterQuantitePanier(${index})"
+            ${item.quantite >= nombre(inventaire.find(p=>p.id==item.id)?.stock || 0) ? "disabled" : ""}
+        >
+            ➕
+        </button>
+
+    </div>
+
+    <div style="font-size:13px;color:#16a34a;font-weight:bold;">
+        💰 Sous-total : ${nombre(item.pvu * item.quantite)} Fc
+    </div>
+
+    <div style="margin-top:6px;font-size:12px;line-height:1.6;">
+
+        📦 Stock actuel :
+        <strong>${nombre(inventaire.find(p=>p.id==item.id)?.stock || 0)}</strong><br>
+
+        🛒 Dans le panier :
+        <strong>${item.quantite}</strong><br>
+
+        ✅ Restera après validation :
+        <strong style="color:#2563eb;">
+            ${
+                nombre(inventaire.find(p=>p.id==item.id)?.stock || 0)
+                - item.quantite
+            }
+        </strong>
+
+    </div>
+</div>
+
+                <div style="text-align:right;">
+
+                    <div style="font-weight:bold;">
+                        ${sousTotal.toFixed(2).replace(/\.00$/,'')} Fc
+                    </div>
+
+                    <button
+                        style="margin-top:5px;background:#dc2626;padding:4px 8px;width:auto;"
+                        onclick="supprimerDuPanier(${index})">
+                        ❌
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+
+    });
+    const resume = document.getElementById("cart-resume");
+
+let nbProduits = panier.length;
+let nbUnites = 0;
+let benefice = 0;
+
+panier.forEach(item => {
+    nbUnites += nombre(item.quantite);
+    benefice += (nombre(item.pvu) - nombre(item.pua)) * nombre(item.quantite);
+});
+
+if (resume) {
+
+    resume.innerHTML = `
+        <div style="display:flex;justify-content:space-between;">
+            <span>💊 Produits différents</span>
+            <strong>${nbProduits}</strong>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span>📦 Quantité totale</span>
+            <strong>${nbUnites}</strong>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span>💰 Montant total</span>
+            <strong>${totalGeneral.toFixed(2).replace(/\.00$/, '')} Fc</strong>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:4px;color:#16a34a;">
+            <span>📈 Bénéfice estimé</span>
+            <strong>${benefice.toFixed(2).replace(/\.00$/, '')} Fc</strong>
+        </div>
+    `;
+}
+
+total.innerText = totalGeneral.toFixed(2).replace(/\.00$/,'') + " Fc";
+
+}
+
+function supprimerDuPanier(index){
+
+    panier.splice(index,1);
+
+    renderPanier();
+
+}
+function augmenterQuantitePanier(index){
+
+    const ligne = panier[index];
+    if(!ligne) return;
+
+    const produit = inventaire.find(p => p.id == ligne.id);
+    if(!produit) return;
+
+    if(ligne.quantite + 1 > nombre(produit.stock)){
+        alert("Stock insuffisant.");
+        return;
+    }
+
+    ligne.quantite++;
+
+    renderPanier();
+}
+
+function diminuerQuantitePanier(index){
+
+    const ligne = panier[index];
+    if(!ligne) return;
+
+    ligne.quantite--;
+
+    if(ligne.quantite <= 0){
+        panier.splice(index,1);
+    }
+
+    renderPanier();
+}
+
+function viderPanier(){
+
+    if(panier.length===0) return;
+
+    if(!confirm("Vider le panier ?")) return;
+
+    panier=[];
+
+    renderPanier();
+
+}
 
         async function annulerVente(idVente) {
             try {
@@ -1857,6 +5469,2254 @@
                 alert("Une erreur est survenue lors de l'annulation dans le cloud.");
             }
         }
+        
+        
+function afficherTickets(tickets) {
+
+    const zone = document.getElementById("admin-sales-log");
+
+    zone.innerHTML = "";
+
+    if (!tickets || tickets.length === 0) {
+
+        zone.innerHTML = `
+            <div style="text-align:center;color:#64748b;padding:20px;">
+                Aucun ticket trouvé.
+            </div>
+        `;
+
+        return;
+    }
+
+    tickets.forEach(ticket => {
+
+    zone.innerHTML += `
+
+<div
+onclick="ouvrirTicket('${ticket.id}')"
+style="
+background:white;
+border:1px solid #e2e8f0;
+border-radius:12px;
+padding:15px;
+margin-bottom:10px;
+cursor:pointer;
+box-shadow:0 2px 5px rgba(0,0,0,.05);
+">
+
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:8px;
+">
+
+
+<div style="
+font-size:16px;
+font-weight:bold;
+color:#0f766e;
+">
+
+🧾 ${ticket.id}
+
+</div>
+
+
+<div style="
+font-size:12px;
+font-weight:bold;
+padding:5px 10px;
+border-radius:20px;
+
+background:${
+ticket.statut === "ANNULE"
+    ? "#fee2e2"
+    :
+ticket.statut === "PARTIEL"
+    ? "#fef3c7"
+    :
+    "#dcfce7"
+};
+
+color:${
+ticket.statut === "ANNULE"
+    ? "#b91c1c"
+    :
+ticket.statut === "PARTIEL"
+    ? "#92400e"
+    :
+    "#166534"
+};
+
+">
+
+${
+ticket.statut === "ANNULE"
+    ? "🔴 ANNULE"
+    :
+ticket.statut === "PARTIEL"
+    ? "🟡 PARTIEL"
+    :
+    "🟢 VALIDE"
+}
+
+</div>
+
+
+</div>
+
+
+
+<div style="
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:8px;
+font-size:14px;
+">
+
+
+<div>
+👤 <b>Assistant</b><br>
+${ticket.assistant}
+</div>
+
+
+<div>
+📅 <b>Date</b><br>
+${ticket.date}
+</div>
+
+
+<div>
+⏰ <b>Heure</b><br>
+${ticket.heure}
+</div>
+
+
+<div>
+💊 <b>Articles</b><br>
+${ticket.nb_articles}
+</div>
+
+
+</div>
+
+
+
+<hr style="
+border:none;
+border-top:1px dashed #cbd5e1;
+margin:12px 0;
+">
+
+
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+">
+
+
+<div style="
+color:#16a34a;
+font-size:18px;
+font-weight:bold;
+">
+
+💰 
+${nombre(ticket.montant_total)}
+ Fc
+
+</div>
+
+
+
+<div style="
+color:#2563eb;
+font-size:14px;
+font-weight:bold;
+">
+
+📈 Bénéfice :
+${nombre(ticket.benefice_total)}
+ Fc
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+`;
+
+});
+
+}
+
+async function chargerResumeTickets(){
+
+    const zone = document.getElementById("ticket-summary");
+
+    if(!zone) return;
+
+
+    let requete = dbCloud
+    .from("tickets")
+    .select("montant_total, benefice_total");
+
+
+    const date = document.getElementById("ticket-date").value;
+
+
+    if(date){
+
+        requete = requete.eq("date", date);
+
+    }
+
+
+    const { data, error } = await requete;
+
+
+    if(error){
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    const tickets = data || [];
+
+
+    let chiffreAffaires = 0;
+
+    let benefice = 0;
+
+
+    tickets.forEach(t=>{
+
+        chiffreAffaires += Number(t.montant_total || 0);
+
+        benefice += Number(t.benefice_total || 0);
+
+    });
+
+
+
+    zone.innerHTML = `
+
+    <div style="
+    display:flex;
+    justify-content:space-between;
+    ">
+
+        <span>🧾 Tickets</span>
+
+        <b>${tickets.length}</b>
+
+    </div>
+
+
+    <div style="
+    display:flex;
+    justify-content:space-between;
+    ">
+
+        <span>💰 Chiffre d'affaires</span>
+
+        <b>
+        ${nombre(chiffreAffaires)} Fc
+        </b>
+
+    </div>
+
+
+    <div style="
+    display:flex;
+    justify-content:space-between;
+    color:#16a34a;
+    ">
+
+        <span>📈 Bénéfice</span>
+
+        <b>
+        ${nombre(benefice)} Fc
+        </b>
+
+    </div>
+
+    `;
+
+
+}
+
+async function chargerTopProduitsTickets(){
+
+    const zone = document.getElementById("top-products-summary");
+
+    if(!zone) return;
+
+
+    let requete = dbCloud
+    .from("ticket_lignes")
+    .select("nom,quantite,total,profit");
+
+
+    const date = document.getElementById("ticket-date").value;
+
+
+    if(date){
+
+        // on récupère d'abord les tickets du jour
+
+        const { data:tickets } = await dbCloud
+        .from("tickets")
+        .select("id")
+        .eq("date",date);
+
+
+        const ids = (tickets || [])
+        .map(t=>t.id);
+
+
+        if(ids.length===0){
+
+            zone.innerHTML =
+            "Aucune vente.";
+
+            return;
+
+        }
+
+
+        requete = requete.in(
+            "ticket_id",
+            ids
+        );
+
+    }
+
+
+
+    const { data, error } = await requete;
+
+
+    if(error){
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+
+    const produits = {};
+
+
+
+    (data || []).forEach(l=>{
+
+
+        if(!produits[l.nom]){
+
+            produits[l.nom]={
+                quantite:0,
+                total:0,
+                profit:0
+            };
+
+        }
+
+
+        produits[l.nom].quantite += Number(l.quantite || 0);
+
+        produits[l.nom].total += Number(l.total || 0);
+
+        produits[l.nom].profit += Number(l.profit || 0);
+
+
+    });
+
+
+
+    const classement =
+    Object.entries(produits)
+    .sort(
+        (a,b)=>
+        b[1].quantite - a[1].quantite
+    )
+    .slice(0,5);
+
+
+
+    if(classement.length===0){
+
+        zone.innerHTML =
+        "Aucune vente.";
+
+        return;
+
+    }
+
+
+
+    let html = `
+
+    <b style="color:#0f766e;">
+    🏆 Top 5 médicaments vendus
+    </b>
+
+    <hr>
+
+    `;
+
+
+    classement.forEach((p,index)=>{
+
+
+        html += `
+
+        <div style="
+        display:flex;
+        justify-content:space-between;
+        margin-bottom:6px;
+        ">
+
+        <span>
+        ${index+1}. 💊 ${p[0]}
+        </span>
+
+
+        <b>
+        ${p[1].quantite}
+        </b>
+
+        </div>
+
+        `;
+
+
+    });
+
+
+
+    zone.innerHTML = html;
+
+
+}
+
+async function chargerPerformanceAssistants(){
+
+    const zone = document.getElementById(
+        "assistant-performance-summary"
+    );
+
+
+    if(!zone) return;
+
+
+
+    let requete = dbCloud
+    .from("tickets")
+    .select(
+        "assistant,montant_total,benefice_total"
+    );
+
+
+
+    const date =
+    document.getElementById("ticket-date").value;
+
+
+
+    if(date){
+
+        requete =
+        requete.eq("date",date);
+
+    }
+
+
+
+    const { data, error } = await requete;
+
+
+
+    if(error){
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+
+    const assistants = {};
+
+
+
+    (data || []).forEach(t=>{
+
+
+        const nom =
+        t.assistant || "Inconnu";
+
+
+
+        if(!assistants[nom]){
+
+            assistants[nom]={
+                tickets:0,
+                ventes:0,
+                benefice:0
+            };
+
+        }
+
+
+
+        assistants[nom].tickets++;
+
+
+        assistants[nom].ventes +=
+        Number(t.montant_total || 0);
+
+
+
+        assistants[nom].benefice +=
+        Number(t.benefice_total || 0);
+
+
+    });
+
+
+
+
+    const liste =
+    Object.entries(assistants);
+
+
+
+    if(liste.length===0){
+
+        zone.innerHTML =
+        "Aucune vente.";
+
+        return;
+
+    }
+
+
+
+
+    let html = `
+
+    <b style="color:#0f766e;">
+    👥 Performance des assistants
+    </b>
+
+    <hr>
+
+    `;
+
+
+
+    liste.forEach(a=>{
+
+
+        html += `
+
+        <div style="
+        margin-bottom:12px;
+        padding-bottom:10px;
+        border-bottom:1px solid #e5e7eb;
+        ">
+
+
+        <b>
+        👤 ${a[0]}
+        </b>
+
+
+        <div>
+        🧾 Tickets :
+        ${a[1].tickets}
+        </div>
+
+
+        <div>
+        💰 Ventes :
+        ${nombre(a[1].ventes)} Fc
+        </div>
+
+
+        <div style="
+        color:#16a34a;
+        font-weight:bold;
+        ">
+        📈 Bénéfice :
+        ${nombre(a[1].benefice)} Fc
+        </div>
+
+
+        </div>
+
+        `;
+
+
+    });
+
+
+
+    zone.innerHTML = html;
+
+
+}
+
+async function chargerAnalyseVentes(type){
+
+
+const zone =
+document.getElementById("sales-period-summary");
+
+
+if(!zone) return;
+
+
+
+const maintenant = new Date();
+
+
+let debut;
+
+
+
+if(type==="semaine"){
+
+
+    debut = new Date();
+
+    debut.setDate(
+        maintenant.getDate() - 7
+    );
+
+
+}else{
+
+
+    debut = new Date(
+        maintenant.getFullYear(),
+        maintenant.getMonth(),
+        1
+    );
+
+
+}
+
+
+
+const dateDebut =
+debut.toISOString()
+.split("T")[0];
+
+
+
+const dateFin =
+maintenant.toISOString()
+.split("T")[0];
+
+
+
+const {data,error}=await dbCloud
+.from("tickets")
+.select(
+"montant_total,benefice_total,date"
+)
+.gte("date",dateDebut)
+.lte("date",dateFin);
+
+
+
+if(error){
+
+console.error(error);
+return;
+
+}
+
+
+
+let ventes=0;
+
+let benefice=0;
+
+
+
+(data||[]).forEach(t=>{
+
+
+ventes += Number(
+t.montant_total || 0
+);
+
+
+benefice += Number(
+t.benefice_total || 0
+);
+
+
+});
+
+
+
+zone.innerHTML=`
+
+<b style="
+color:#0f766e;
+font-size:16px;
+">
+
+📊 Analyse ${type}
+
+</b>
+
+
+<hr>
+
+
+<div style="
+display:flex;
+justify-content:space-between;
+">
+
+<span>
+🧾 Tickets
+</span>
+
+<b>
+${data.length}
+</b>
+
+</div>
+
+
+
+<div style="
+display:flex;
+justify-content:space-between;
+">
+
+<span>
+💰 Ventes
+</span>
+
+<b>
+${nombre(ventes)} Fc
+</b>
+
+</div>
+
+
+
+<div style="
+display:flex;
+justify-content:space-between;
+color:#16a34a;
+">
+
+<span>
+📈 Bénéfice
+</span>
+
+<b>
+${nombre(benefice)} Fc
+</b>
+
+</div>
+
+
+`;
+
+}
+
+async function chargerGraphiqueVentes(){
+
+    const zone =
+    document.getElementById("sales-chart");
+
+
+    if(!zone) return;
+
+
+
+    const maintenant = new Date();
+
+
+    const debut = new Date(
+        maintenant.getFullYear(),
+        maintenant.getMonth(),
+        1
+    );
+
+
+    const dateDebut =
+    debut.toISOString().split("T")[0];
+
+
+    const dateFin =
+    maintenant.toISOString().split("T")[0];
+
+
+
+    const {data,error}=await dbCloud
+    .from("tickets")
+    .select("date,montant_total")
+    .gte("date",dateDebut)
+    .lte("date",dateFin);
+
+
+
+    if(error){
+
+        console.error(error);
+        return;
+
+    }
+
+
+
+    const jours={};
+
+
+
+    (data||[]).forEach(t=>{
+
+
+        if(!jours[t.date]){
+
+            jours[t.date]=0;
+
+        }
+
+
+        jours[t.date]+=Number(
+            t.montant_total || 0
+        );
+
+
+    });
+
+
+
+    const liste =
+    Object.entries(jours)
+    .sort((a,b)=>a[0].localeCompare(b[0]));
+
+
+
+    if(liste.length===0){
+
+        zone.innerHTML=
+        "Aucune vente.";
+
+        return;
+
+    }
+
+
+
+    const maximum =
+    Math.max(
+        ...liste.map(j=>j[1])
+    );
+
+
+
+    let html=`
+
+    <b style="
+    color:#0f766e;
+    ">
+    📊 Évolution des ventes du mois
+    </b>
+
+    <div style="
+    margin-top:15px;
+    display:flex;
+    align-items:flex-end;
+    gap:8px;
+    height:180px;
+    overflow-x:auto;
+    padding-bottom:10px;
+    ">
+    `;
+
+
+
+    liste.forEach(j=>{
+
+
+        const hauteur =
+        maximum>0
+        ?
+        (j[1]/maximum)*150
+        :
+        0;
+
+
+
+        html +=`
+
+        <div style="
+        min-width:35px;
+        text-align:center;
+        ">
+
+
+        <div style="
+        height:${hauteur}px;
+        background:#0f766e;
+        border-radius:6px 6px 0 0;
+        "></div>
+
+
+        <div style="
+        font-size:10px;
+        margin-top:5px;
+        ">
+        ${j[0].slice(8)}
+        </div>
+
+
+        </div>
+
+        `;
+
+
+    });
+
+
+
+    html+=`
+
+    </div>
+
+    <div style="
+    font-size:12px;
+    color:#64748b;
+    margin-top:5px;
+    ">
+    Jour du mois
+    </div>
+
+    `;
+
+
+
+    zone.innerHTML=html;
+
+
+}
+
+async function imprimerRapportJournalier(){
+
+    const date =
+    document.getElementById("ticket-date").value;
+
+
+    if(!date){
+
+        alert("Veuillez sélectionner une date.");
+
+        return;
+
+    }
+
+
+
+    const { data:tickets, error } =
+    await dbCloud
+    .from("tickets")
+    .select("*")
+    .eq("date",date);
+
+
+
+    if(error){
+
+        alert(error.message);
+
+        return;
+
+    }
+
+
+
+    let ventes = 0;
+
+    let benefice = 0;
+
+
+
+    (tickets || []).forEach(t=>{
+
+        ventes += Number(t.montant_total || 0);
+
+        benefice += Number(t.benefice_total || 0);
+
+    });
+
+
+
+    const pharmacie =
+    await obtenirInfosPharmacie();
+
+
+
+    let lignesAssistants = "";
+
+
+
+    const assistants = {};
+
+
+
+    tickets.forEach(t=>{
+
+
+        const nom =
+        t.assistant || "Inconnu";
+
+
+        if(!assistants[nom]){
+
+            assistants[nom]={
+                tickets:0,
+                ventes:0,
+                benefice:0
+            };
+
+        }
+
+
+        assistants[nom].tickets++;
+
+        assistants[nom].ventes += Number(t.montant_total||0);
+
+        assistants[nom].benefice += Number(t.benefice_total||0);
+
+
+    });
+
+
+
+    Object.entries(assistants)
+    .forEach(a=>{
+
+
+        lignesAssistants += `
+
+        <tr>
+
+        <td>${a[0]}</td>
+
+        <td>${a[1].tickets}</td>
+
+        <td>
+        ${nombre(a[1].ventes)} Fc
+        </td>
+
+        <td>
+        ${nombre(a[1].benefice)} Fc
+        </td>
+
+        </tr>
+
+        `;
+
+    });
+
+
+
+    const fenetre =
+    window.open("","_blank");
+
+
+
+    fenetre.document.write(`
+
+<html>
+
+<head>
+
+<title>
+Rapport journalier
+</title>
+
+
+<style>
+
+body{
+font-family:Arial;
+margin:40px;
+}
+
+
+h1,h2{
+text-align:center;
+}
+
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+
+td,th{
+border:1px solid #999;
+padding:8px;
+}
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<center>
+
+${
+pharmacie.logo_url
+?
+`
+<img src="${pharmacie.logo_url}"
+style="
+width:80px;
+height:80px;
+object-fit:contain;
+">
+`
+:""
+}
+
+
+<h1>
+${pharmacie.nom || "SEKAS PHARMA"}
+</h1>
+
+
+<h2>
+RAPPORT JOURNALIER DES VENTES
+</h2>
+
+
+</center>
+
+
+<hr>
+
+
+<p>
+<b>Date :</b> ${date}
+</p>
+
+
+<p>
+🧾 Tickets :
+<b>${tickets.length}</b>
+</p>
+
+
+<p>
+💰 Chiffre d'affaires :
+<b>${nombre(ventes)} Fc</b>
+</p>
+
+
+<p>
+📈 Bénéfice :
+<b>${nombre(benefice)} Fc</b>
+</p>
+
+
+<hr>
+
+
+<h3>
+Performance des assistants
+</h3>
+
+
+<table>
+
+<tr>
+
+<th>
+Assistant
+</th>
+
+<th>
+Tickets
+</th>
+
+<th>
+Ventes
+</th>
+
+<th>
+Bénéfice
+</th>
+
+</tr>
+
+
+${lignesAssistants}
+
+
+</table>
+
+
+<br><br>
+
+
+<div style="
+display:flex;
+justify-content:space-between;
+text-align:center;
+">
+
+
+<div>
+
+Responsable
+
+<br><br><br>
+
+_________________
+
+</div>
+
+
+<div>
+
+Caissier
+
+<br><br><br>
+
+_________________
+
+</div>
+
+
+</div>
+
+
+</body>
+
+</html>
+
+`);
+
+
+    fenetre.document.close();
+
+
+    fenetre.print();
+
+
+}
+
+async function chargerTickets() {
+
+    let requete = dbCloud
+        .from("tickets")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+    const date = document.getElementById("ticket-date").value;
+
+    if (date) {
+        requete = requete.eq("date", date);
+    }
+
+    const { data, error } = await requete;
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    afficherTickets(data);
+    await chargerResumeTickets();
+    await chargerTopProduitsTickets();
+    await chargerPerformanceAssistants();
+    await chargerAnalyseVentes("mois");
+    await chargerGraphiqueVentes();
+
+}
+
+
+
+async function ouvrirTicket(idTicket) {
+
+    document.getElementById("ticket-modal").style.display = "block";
+
+    const contenu = document.getElementById("ticket-contenu");
+
+    contenu.innerHTML = "Chargement...";
+
+    const { data: ticket, error: errTicket } = await dbCloud
+        .from("tickets")
+        .select("*")
+        .eq("id", idTicket)
+        .single();
+
+    if (errTicket) {
+        contenu.innerHTML = errTicket.message;
+        return;
+    }
+  
+   ticketActuel = ticket;
+   
+   const ticketAnnule = ticket.statut === "ANNULE";
+
+    const { data: lignes, error: errLignes } = await dbCloud
+        .from("ticket_lignes")
+        .select("*")
+        .eq("ticket_id", idTicket);
+
+    if (errLignes) {
+        contenu.innerHTML = errLignes.message;
+        return;
+    }
+    const { data: pharmacie } = await dbCloud
+    .from("parametres_pharmacie")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+    let html = `
+
+<div style="
+text-align:center;
+padding-bottom:15px;
+border-bottom:2px dashed #999;
+">
+
+${pharmacie?.logo_url ? `
+<img
+src="${pharmacie.logo_url}"
+style="
+width:75px;
+height:75px;
+object-fit:contain;
+margin-bottom:8px;
+">
+` : `
+<div style="
+font-size:70px;
+margin-bottom:8px;
+">
+💊
+</div>
+`}
+
+<h2 style="
+margin:0;
+font-size:32px;
+font-weight:bold;
+color:#0f766e;
+">
+${pharmacie?.nom || "PharmaSys"}
+</h2>
+
+<div style="
+font-size:15px;
+font-weight:bold;
+margin-top:5px;
+color:#444;
+">
+Pharmacie autorisée
+</div>
+
+<div style="
+font-size:15px;
+margin-bottom:12px;
+color:#444;
+">
+Conseils pharmaceutiques
+</div>
+
+<div style="
+font-size:15px;
+line-height:1.7;
+color:#555;
+">
+
+${pharmacie?.adresse ? `
+📍 ${pharmacie.adresse}<br>
+` : ""}
+
+${pharmacie?.telephone ? `
+☎ ${pharmacie.telephone}<br>
+` : ""}
+
+${pharmacie?.email ? `
+✉ ${pharmacie.email}<br>
+` : ""}
+
+${pharmacie?.rccm ? `
+RCCM : ${pharmacie.rccm}<br>
+` : ""}
+
+</div>
+
+${pharmacie?.slogan ? `
+<div style="
+margin-top:12px;
+font-style:italic;
+font-size:16px;
+color:#666;
+">
+${pharmacie.slogan}
+</div>
+` : ""}
+
+</div>
+
+<div style="
+padding:15px 0;
+border-bottom:2px dashed #999;
+">
+
+${
+ticketAnnule
+?
+`
+<div style="
+background:#fee2e2;
+color:#b91c1c;
+padding:12px;
+border-radius:10px;
+text-align:center;
+font-weight:bold;
+margin-bottom:15px;
+">
+⚠️ TICKET ANNULÉ
+<br>
+Stock restauré
+</div>
+`
+:
+""
+}
+
+<table style="
+width:100%;
+font-size:17px;
+">
+
+<tr>
+<td><b>Ticket N°</b></td>
+<td style="text-align:right;">
+${ticket.id}
+</td>
+</tr>
+
+<tr>
+<td><b>Date</b></td>
+<td style="text-align:right;">
+${ticket.date}
+</td>
+</tr>
+
+<tr>
+<td><b>Heure</b></td>
+<td style="text-align:right;">
+${ticket.heure}
+</td>
+</tr>
+
+<tr>
+<td><b>Caissier</b></td>
+<td style="text-align:right;">
+${ticket.assistant}
+</td>
+</tr>
+
+<tr>
+<td><b>Statut</b></td>
+
+<td style="
+text-align:right;
+font-weight:bold;
+color:${
+ticket.statut==="ANNULE"
+?"#dc2626"
+:"#16a34a"
+};
+">
+
+${ticket.statut}
+
+</td>
+
+</tr>
+
+
+</table>
+
+</div>
+
+`;
+    let totalArticles = 0;
+
+lignes.forEach(ligne => {
+
+    const quantiteVendue = Number(ligne.quantite || 0);
+
+    const quantiteRetournee = Number(ligne.quantite_retour || 0);
+
+    const quantiteRestante = 
+        quantiteVendue - quantiteRetournee;
+
+
+    totalArticles += quantiteRestante;
+
+
+    html += `
+
+<div style="
+padding:12px 0;
+border-bottom:1px dashed #d1d5db;
+">
+
+    <div style="
+        font-size:18px;
+        font-weight:bold;
+        color:#0f766e;
+        margin-bottom:8px;
+    ">
+        💊 ${ligne.nom}
+    </div>
+
+
+    <div style="
+    font-size:15px;
+    line-height:1.8;
+    ">
+
+        📦 Vendu :
+        <b>${quantiteVendue}</b>
+        <br>
+
+
+        ↩️ Retourné :
+        <b style="color:#dc2626;">
+            ${quantiteRetournee}
+        </b>
+        <br>
+
+
+        ✅ Restant :
+        <b style="color:#16a34a;">
+            ${quantiteRestante}
+        </b>
+
+    </div>
+
+
+
+    <div style="
+    display:flex;
+    justify-content:space-between;
+    margin-top:10px;
+    font-size:16px;
+    ">
+
+        <span>
+            ${quantiteRestante} × 
+            ${nombre(ligne.pvu).toFixed(2).replace(/\\.00$/,'')} Fc
+        </span>
+
+
+        <b>
+            ${nombre(
+                quantiteRestante * Number(ligne.pvu)
+            ).toFixed(2).replace(/\\.00$/,'')} Fc
+        </b>
+
+
+    </div>
+
+
+${
+quantiteRestante > 0
+?
+`
+<button
+onclick="
+retournerLigneTicket(
+'${ticket.id}',
+${ligne.produit_id}
+)"
+style="
+margin-top:10px;
+background:#dc2626;
+padding:6px 10px;
+width:auto;
+">
+❌ Retour
+</button>
+`
+:
+`
+<div style="
+margin-top:10px;
+padding:6px;
+background:#dcfce7;
+color:#166534;
+border-radius:6px;
+font-weight:bold;
+text-align:center;
+">
+✅ Article totalement retourné
+</div>
+`
+}
+
+
+</div>
+
+`;
+
+});
+
+
+html += `
+
+<table style="
+width:100%;
+font-size:17px;
+">
+
+<tr>
+<td><b>Articles</b></td>
+<td style="text-align:right;">
+${totalArticles}
+</td>
+</tr>
+
+<tr>
+<td colspan="2">
+<hr style="border:none;border-top:1px dashed #bbb;">
+</td>
+</tr>
+
+<tr style="
+font-size:22px;
+font-weight:bold;
+color:#0f766e;
+">
+
+<td>
+TOTAL
+</td>
+
+<td style="text-align:right;">
+${nombre(ticket.montant_total).toFixed(2).replace(/\.00$/, '')} Fc
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+Bénéfice
+</td>
+
+<td style="text-align:right;">
+${nombre(ticket.benefice_total).toFixed(2).replace(/\.00$/, '')} Fc
+</td>
+
+</tr>
+
+</table>
+
+</div>
+
+
+<div style="
+margin-top:25px;
+padding-top:18px;
+border-top:2px dashed #999;
+text-align:center;
+line-height:1.9;
+">
+
+<div style="
+font-size:18px;
+font-weight:bold;
+color:#0f766e;
+">
+❤️ Merci de votre confiance ❤️
+</div>
+
+<div style="
+font-size:15px;
+color:#555;
+margin-top:10px;
+">
+Conservez soigneusement ce ticket.
+</div>
+
+<div style="
+font-size:15px;
+font-weight:bold;
+color:#b91c1c;
+margin-top:8px;
+">
+Aucun échange sans présentation de ce ticket.
+</div>
+
+<div style="
+margin-top:18px;
+font-size:13px;
+color:#888;
+">
+
+Édité par <b>PharmaSys Mobile®</b>
+
+</div>
+
+</div>
+
+`;
+
+contenu.innerHTML = html;
+
+}
+
+
+function fermerTicket() {
+
+    document.getElementById("ticket-modal").style.display = "none";
+
+    document.getElementById("ticket-contenu").innerHTML = "";
+
+}
+
+async function annulerTicket(){
+
+    if(!ticketActuel){
+        alert("Aucun ticket sélectionné.");
+        return;
+    }
+
+
+    if(ticketActuel.statut === "ANNULE"){
+        alert("Ce ticket est déjà annulé.");
+        return;
+    }
+
+
+    if(!confirm(
+        "Voulez-vous vraiment annuler ce ticket ?\nLe stock sera restauré."
+    )){
+        return;
+    }
+
+
+    try{
+
+
+        const { data:lignes, error } = await dbCloud
+        .from("ticket_lignes")
+        .select("*")
+        .eq("ticket_id", ticketActuel.id);
+
+
+        if(error){
+            alert(error.message);
+            return;
+        }
+
+
+
+        for(const ligne of lignes){
+
+
+            const { data:produit, error:errProduit } = await dbCloud
+            .from("inventaire")
+            .select("*")
+            .eq("id", ligne.produit_id)
+            .single();
+
+
+            if(errProduit){
+                alert(errProduit.message);
+                return;
+            }
+
+
+
+            const stockAvant = Number(produit.stock);
+
+
+            const stockApres =
+            stockAvant + Number(ligne.quantite);
+
+
+
+            await dbCloud
+            .from("inventaire")
+            .update({
+                stock: stockApres
+            })
+            .eq("id", produit.id);
+
+
+
+            await enregistrerMouvementCloud(
+
+                "RETOUR",
+
+                produit,
+
+                ligne.quantite,
+
+                stockAvant,
+
+                stockApres,
+
+                "Annulation ticket " + ticketActuel.id,
+
+                ticketActuel.id
+
+            );
+
+
+        }
+
+
+
+        await dbCloud
+        .from("tickets")
+        .update({
+            statut:"ANNULE"
+        })
+        .eq(
+            "id",
+            ticketActuel.id
+        );
+
+
+
+        alert(
+            "✅ Ticket annulé.\nStock restauré."
+        );
+
+
+        fermerTicket();
+
+
+        await chargerTickets();
+
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Erreur pendant l'annulation."
+        );
+
+    }
+
+}
+
+async function recalculerTicket(ticketId){
+
+    const { data:lignes, error } = await dbCloud
+        .from("ticket_lignes")
+        .select("*")
+        .eq("ticket_id", ticketId);
+
+    if(error){
+        alert(error.message);
+        return false;
+    }
+
+    let nbArticles = 0;
+    let montantTotal = 0;
+    let beneficeTotal = 0;
+
+    let toutesRetournees = true;
+
+    lignes.forEach(ligne=>{
+
+        const qte = Number(ligne.quantite || 0);
+        const retour = Number(ligne.quantite_retour || 0);
+
+        const reste = qte - retour;
+
+        if(reste > 0){
+
+            toutesRetournees = false;
+
+            nbArticles += reste;
+
+            montantTotal +=
+                reste * Number(ligne.pvu || 0);
+
+            beneficeTotal +=
+                reste *
+                (
+                    Number(ligne.pvu || 0)
+                    -
+                    Number(ligne.pua || 0)
+                );
+
+        }
+
+    });
+
+    // Détermination du statut
+    let statut = "VALIDE";
+
+    if (toutesRetournees) {
+
+        statut = "ANNULE";
+
+    } else {
+
+        const auMoinsUnRetour = lignes.some(
+            l => Number(l.quantite_retour || 0) > 0
+        );
+
+        if (auMoinsUnRetour) {
+            statut = "PARTIEL";
+        }
+
+    }
+
+    // Mise à jour du ticket
+    const { error: errUpdate } = await dbCloud
+        .from("tickets")
+        .update({
+
+            nb_articles: nbArticles,
+
+            montant_total: montantTotal,
+
+            benefice_total: beneficeTotal,
+
+            statut: statut
+
+        })
+        .eq("id", ticketId);
+
+    if(errUpdate){
+
+        alert(errUpdate.message);
+
+        return false;
+
+    }
+
+    return true;
+
+}
+
+
+
+async function retournerLigneTicket(ticketId, produitId){
+
+    const quantiteRetour = Number(
+        prompt("Quantité à retourner :")
+    );
+
+    if(!quantiteRetour || quantiteRetour <= 0){
+        return;
+    }
+
+
+    const { data:ligne, error } = await dbCloud
+        .from("ticket_lignes")
+        .select("*")
+        .eq("ticket_id", ticketId)
+        .eq("produit_id", produitId)
+        .single();
+
+
+    if(error || !ligne){
+
+        alert("Ligne du ticket introuvable.");
+        return;
+
+    }
+
+
+    const dejaRetourne = Number(
+        ligne.quantite_retour || 0
+    );
+
+
+    const disponible =
+        Number(ligne.quantite)
+        -
+        dejaRetourne;
+
+
+    if(quantiteRetour > disponible){
+
+        alert(
+            "Quantité supérieure à la quantité vendue restante."
+        );
+
+        return;
+
+    }
+
+
+    // Mise à jour quantité retournée
+
+    const nouveauRetour =
+        dejaRetourne + quantiteRetour;
+
+
+    const { error:updateError } = await dbCloud
+        .from("ticket_lignes")
+        .update({
+
+            quantite_retour:nouveauRetour
+
+        })
+        .eq("id", ligne.id);
+
+
+
+    if(updateError){
+
+        alert(updateError.message);
+        return;
+
+    }
+
+
+
+    // Remise en stock
+
+    const { data:produit } = await dbCloud
+        .from("inventaire")
+        .select("*")
+        .eq("id", produitId)
+        .single();
+
+
+
+    if(produit){
+
+        const avant = Number(produit.stock);
+
+        const apres =
+            avant + quantiteRetour;
+
+
+        await dbCloud
+        .from("inventaire")
+        .update({
+
+            stock:apres
+
+        })
+        .eq("id", produitId);
+
+
+
+        await enregistrerMouvementCloud(
+
+            "RETOUR",
+
+            produit,
+
+            quantiteRetour,
+
+            avant,
+
+            apres,
+
+            "Retour ticket " + ticketId,
+
+            ticketId
+
+        );
+
+    }
+
+
+
+    // Recalcul du ticket
+
+    await recalculerTicket(ticketId);
+
+
+
+    alert(
+        "✅ Retour enregistré."
+    );
+
+
+    // Recharge le ticket affiché
+
+    ouvrirTicket(ticketId);
+
+
+}
+
+async function migrerAnciennesVentesVersTickets() {
+
+    if (!confirm("Créer les tickets manquants à partir de l'ancien historique ?")) return;
+
+    const { data: ventes, error } = await dbCloud
+        .from("historique_ventes")
+        .select("*")
+        .order("date", { ascending: true });
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    let nb = 0;
+    let nbLignes = 0;
+
+    for (const vente of ventes) {
+
+        if (!vente.id || vente.id.indexOf("-") === -1) {
+            console.warn("Vente ignorée :", vente);
+            continue;
+        }
+
+        const ticketId = vente.id.split("-")[0];
+
+        // Vérifier si le ticket existe
+        const { data: ticket } = await dbCloud
+            .from("tickets")
+            .select("id")
+            .eq("id", ticketId);
+
+        if (!ticket || ticket.length === 0) {
+
+            const { error: errTicket } = await dbCloud
+                .from("tickets")
+                .insert([{
+                    id: ticketId,
+                    date: vente.date,
+                    heure: vente.heure,
+                    assistant: vente.assistant,
+                    assistant_id: vente.assistant_id,
+                    nb_articles: 0,
+                    montant_total: 0,
+                    benefice_total: 0,
+                    statut: vente.statut
+                }]);
+
+            if (errTicket) {
+                alert("Erreur Ticket : " + errTicket.message);
+                return;
+            }
+
+            nbTickets++;
+        }
+
+        // Vérifier si cette ligne existe déjà
+        const { data: ligneExistante } = await dbCloud
+            .from("ticket_lignes")
+            .select("id")
+            .eq("ticket_id", ticketId)
+            .eq("produit_id", vente.produit_id)
+            .eq("nom", vente.nom)
+            .eq("quantite", vente.quantite)
+            .limit(1);
+
+        if (!ligneExistante || ligneExistante.length === 0) {
+
+            const { error: errLigne } = await dbCloud
+                .from("ticket_lignes")
+                .insert([{
+                    ticket_id: ticketId,
+                    produit_id: vente.produit_id,
+                    nom: vente.nom,
+                    quantite: vente.quantite,
+                    pua: vente.pua,
+                    pvu: vente.pvu,
+                    total: vente.total,
+                    profit: vente.profit
+                }]);
+
+            if (errLigne) {
+                alert("Erreur Ligne : " + errLigne.message);
+                return;
+            }
+
+            nbLignes++;
+        }
+
+        // Recalcul du ticket
+        await recalculerTicket(ticketId);
+
+        if (errLecture) {
+            alert(errLecture.message);
+            return;
+        }
+
+        const nbArticles = lignes.reduce((s, l) => s + Number(l.quantite || 0), 0);
+
+        const montantTotal = lignes.reduce((s, l) => s + Number(l.total || 0), 0);
+
+        const beneficeTotal = lignes.reduce((s, l) => s + Number(l.profit || 0), 0);
+
+        const { error: errUpdate } = await dbCloud
+            .from("tickets")
+            .update({
+                nb_articles: nbArticles,
+                montant_total: montantTotal,
+                benefice_total: beneficeTotal
+            })
+            .eq("id", ticketId);
+
+        if (errUpdate) {
+            alert("Erreur Update : " + errUpdate.message);
+            return;
+        }
+    }
+
+    await chargerTickets();
+
+    alert(
+        "✅ Migration terminée.\n\n" +
+        "Tickets créés : " + nbTickets +
+        "\nLignes créées : " + nbLignes
+    );
+}
 
         async function applyReapp() {
             if (!selectedProductIdAdm) return;
@@ -2131,7 +7991,7 @@
             }
         }
 
-        function switchScreen(role) {
+        async function switchScreen(role) {
             const screenAst = document.getElementById('screen-assistant');
             const screenMouv = document.getElementById('screen-mouvements');
             const screenAdm = document.getElementById('screen-admin');
@@ -2148,7 +8008,7 @@
             if(document.getElementById("filter-catalog-ast")) document.getElementById("filter-catalog-ast").value = "";
             if(document.getElementById("filter-catalog-adm")) document.getElementById("filter-catalog-adm").value = "";
 
-            const nomPharmacie = localStorage.getItem("customPharmacyName") || "Sekas pharma";
+            const nomPharmacie = obtenirNomPharmacie() || "Sekas pharma";
 
             if (role === 'assistant') {
                 if (screenAst) { screenAst.style.display = 'block'; screenAst.classList.add('active'); }
@@ -2171,11 +8031,13 @@
                 document.getElementById('app-title').innerHTML = `PharmaSys - <span id="header-pharmacy-name">${nomPharmacie}</span>`;
                 
                 closeAdminSubSection();
-                
-                renderAdminScreen();
-                renderAlphabeticalCatalog();
-                renderTop10Ventes();
-                renderRupturesStock();
+
+await chargerInfosPharmacie();
+
+renderAdminScreen();
+renderAlphabeticalCatalog();
+renderTop10Ventes();
+renderRupturesStock();
             }
         }
 
@@ -2247,6 +8109,1204 @@
                 toggleUserCode.textContent = "👁️";
             }
         };
+  
+        async function imprimerTicket(){
+
+    if(!ticketActuel){
+
+        alert("Aucun ticket ouvert.");
+
+        return;
+    }
+
+
+    try{
+
+
+        const { data: lignes, error } = await dbCloud
+        .from("ticket_lignes")
+        .select("*")
+        .eq("ticket_id", ticketActuel.id);
+
+
+        if(error){
+
+            console.error(error);
+            alert(error.message);
+            return;
+
+        }
+
+
+        const pharmacie = await obtenirInfosPharmacie();
+
+
+        let produits = "";
+
+
+        lignes.forEach(l=>{
+
+            produits += `
+
+            <tr>
+
+                <td>
+                    ${l.nom}
+                </td>
+
+                <td style="text-align:center;">
+                    ${l.quantite}
+                </td>
+
+                <td style="text-align:right;">
+                    ${nombre(l.total)} Fc
+                </td>
+
+            </tr>
+
+            `;
+
+        });
+
+
+
+        const fenetre = window.open("", "_blank");
+
+
+        fenetre.document.write(`
+
+<html>
+
+<head>
+
+<title>Ticket ${ticketActuel.id}</title>
+
+
+<style>
+
+body{
+font-family:Arial;
+width:300px;
+margin:auto;
+font-size:14px;
+}
+
+.center{
+text-align:center;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+td{
+padding:5px 0;
+}
+
+hr{
+border:none;
+border-top:1px dashed #555;
+}
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<div class="center">
+
+
+${pharmacie.logo_url ? `
+
+<img src="${pharmacie.logo_url}"
+style="
+width:80px;
+height:80px;
+object-fit:contain;
+">
+
+` : ""}
+
+
+<h2>
+${pharmacie.nom || "SEKAS PHARMA"}
+</h2>
+
+
+<div>
+${pharmacie.telephone || ""}
+</div>
+
+
+<hr>
+
+
+<b>
+Ticket N° ${ticketActuel.id}
+</b>
+
+
+<br>
+
+${ticketActuel.date}
+${ticketActuel.heure}
+
+
+</div>
+
+
+<hr>
+
+
+<table>
+
+${produits}
+
+</table>
+
+
+<hr>
+
+
+<table>
+
+
+<tr>
+
+<td>
+TOTAL
+</td>
+
+<td style="text-align:right;font-weight:bold;">
+${nombre(ticketActuel.montant_total)} Fc
+</td>
+
+</tr>
+
+
+</table>
+
+
+<hr>
+
+
+<div class="center">
+
+Merci de votre confiance ❤️
+
+<br><br>
+
+PharmaSys Mobile®
+
+</div>
+
+
+</body>
+
+</html>
+
+`);
+
+
+        fenetre.document.close();
+
+        fenetre.print();
+
+
+
+    }catch(e){
+
+        console.error(e);
+
+        alert("Erreur impression ticket.");
+
+    }
+
+}
+
+async function exporterTicketPDF(){
+
+    if(!ticketActuel){
+
+        alert("Aucun ticket ouvert.");
+
+        return;
+    }
+
+
+    try{
+
+
+        const { data: lignes, error } = await dbCloud
+        .from("ticket_lignes")
+        .select("*")
+        .eq("ticket_id", ticketActuel.id);
+
+
+        if(error){
+
+            console.error(error);
+            alert(error.message);
+            return;
+
+        }
+
+
+        const pharmacie = await obtenirInfosPharmacie();
+
+
+        let produits = "";
+
+
+        lignes.forEach(l=>{
+
+            produits += `
+
+            <tr>
+
+                <td>${l.nom}</td>
+
+                <td style="text-align:center;">
+                    ${l.quantite}
+                </td>
+
+                <td style="text-align:right;">
+                    ${nombre(l.total)} Fc
+                </td>
+
+            </tr>
+
+            `;
+
+        });
+
+
+
+        const contenu = `
+
+        <html>
+
+        <head>
+
+        <style>
+
+        body{
+            font-family:Arial;
+            font-size:14px;
+        }
+
+        .center{
+            text-align:center;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        td{
+            padding:6px;
+        }
+
+        hr{
+            border:none;
+            border-top:1px dashed #555;
+        }
+
+        </style>
+
+        </head>
+
+
+        <body>
+
+
+        <div class="center">
+
+
+        ${
+            pharmacie.logo_url
+            ?
+            `<img src="${pharmacie.logo_url}"
+            style="
+            width:80px;
+            height:80px;
+            object-fit:contain;
+            ">`
+            :
+            ""
+        }
+
+
+        <h2>
+        ${pharmacie.nom || "SEKAS PHARMA"}
+        </h2>
+
+
+        <div>
+        ${pharmacie.adresse || ""}
+        </div>
+
+
+        <div>
+        ${pharmacie.telephone || ""}
+        </div>
+
+
+        <hr>
+
+
+        <b>
+        Ticket N° ${ticketActuel.id}
+        </b>
+
+
+        <br>
+
+        ${ticketActuel.date}
+        ${ticketActuel.heure}
+
+
+        </div>
+
+
+        <hr>
+
+
+        <table>
+
+        ${produits}
+
+        </table>
+
+
+        <hr>
+
+
+        <h3 style="text-align:right;">
+
+        TOTAL :
+        ${nombre(ticketActuel.montant_total)} Fc
+
+        </h3>
+
+
+        <div class="center">
+
+        Merci pour votre confiance ❤️
+
+        <br><br>
+
+        PharmaSys Mobile®
+
+        </div>
+
+
+        </body>
+
+        </html>
+
+        `;
+
+
+
+        const fenetre = window.open("", "_blank");
+
+
+        fenetre.document.write(contenu);
+
+
+        fenetre.document.close();
+
+
+        setTimeout(()=>{
+
+            fenetre.print();
+
+        },500);
+
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert("Impossible d'exporter le ticket.");
+
+    }
+
+}
+
+async function partagerTicket(){
+
+    if(!ticketActuel){
+
+        alert("Aucun ticket ouvert.");
+
+        return;
+    }
+
+
+    try{
+
+        const pharmacie = await obtenirInfosPharmacie();
+
+
+        const message = `
+
+${pharmacie.nom || "SEKAS PHARMA"}
+
+🧾 Ticket N° : ${ticketActuel.id}
+
+📅 Date : ${ticketActuel.date}
+🕒 Heure : ${ticketActuel.heure}
+
+💰 Total : ${nombre(ticketActuel.montant_total)} Fc
+
+Merci pour votre confiance ❤️
+
+        `;
+
+
+        // Partage natif téléphone
+
+        if(navigator.share){
+
+            await navigator.share({
+
+                title:
+                "Ticket " + ticketActuel.id,
+
+                text:
+                message
+
+            });
+
+        }else{
+
+
+            // Solution de secours
+
+            await navigator.clipboard.writeText(message);
+
+
+            alert(
+                "✅ Ticket copié dans le presse-papier."
+            );
+
+        }
+
+
+
+    }catch(error){
+
+
+        console.error(
+            "Erreur partage ticket :",
+            error
+        );
+
+
+    }
+
+}
+
+   
+   async function imprimerInventaire(id, filtre = "TOUS"){
+
+    try{
+
+        const { inventaire, controles } = await chargerDonneesInventaire(id);
+
+        const infosPharmacie = await obtenirInfosPharmacie();
+
+        const nomPharmacie = infosPharmacie.nom || "Sekas pharma";
+
+        const logoPharmacie = infosPharmacie.logo_url || "";
+
+        const dateImpression = new Date().toLocaleString("fr-FR");
+  
+        const titreRapport = inventaire.statut === "CLOTURE"
+    ? "RAPPORT OFFICIEL D'INVENTAIRE"
+    : "RAPPORT PROVISOIRE D'INVENTAIRE";
+    const numeroRapport = "INV-" + String(inventaire.id).padStart(6,"0");
+  
+   const nbConformes = inventaire.nb_produits_controles - inventaire.nb_ecarts;
+
+const tauxConformite =
+inventaire.nb_produits_controles > 0
+?
+((nbConformes / inventaire.nb_produits_controles) * 100).toFixed(2)
+:
+"0.00";
+
+const tauxEcarts =
+inventaire.nb_produits_controles > 0
+?
+((inventaire.nb_ecarts / inventaire.nb_produits_controles) * 100).toFixed(2)
+:
+"0.00";
+
+const impactNet =
+(inventaire.surplus || 0) - (inventaire.pertes || 0);
+
+  
+    let controlesFiltres = controles;
+
+switch(filtre){
+
+    case "ECARTS":
+        controlesFiltres = controles.filter(c => Number(c.ecart) !== 0);
+        break;
+
+    case "PERTES":
+        controlesFiltres = controles.filter(c => Number(c.ecart) < 0);
+        break;
+
+    case "SURPLUS":
+        controlesFiltres = controles.filter(c => Number(c.ecart) > 0);
+        break;
+
+    case "CONFORMES":
+        controlesFiltres = controles.filter(c => Number(c.ecart) === 0);
+        break;
+
+}
+
+
+        let lignes = "";
+
+        controlesFiltres.forEach(c=>{
+
+            lignes += `
+            <tr>
+
+                <td>${new Date(c.date_controle).toLocaleString("fr-FR")}</td>
+
+                <td>${c.produit_nom}</td>
+
+                <td style="text-align:center;">
+                    ${c.stock_systeme}
+                </td>
+
+                <td style="text-align:center;">
+                    ${c.stock_physique}
+                </td>
+
+                <td style="
+                    text-align:center;
+                    font-weight:bold;
+                    color:${
+                        c.ecart < 0
+                        ? "#dc2626"
+                        : c.ecart > 0
+                        ? "#16a34a"
+                        : "#000"
+                    };
+                ">
+                    ${c.ecart}
+                </td>
+
+                <td style="text-align:right;">
+                    ${nombre(c.valeur_ecart || 0)} Fc
+                </td>
+
+                <td style="text-align:center;">
+                    ${c.statut}
+                </td>
+
+            </tr>
+            `;
+
+        });
+
+
+        const fenetre = window.open("", "_blank");
+
+
+        fenetre.document.write(`
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<title>Rapport d'inventaire</title>
+
+
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    margin:40px;
+    color:#000;
+}
+
+
+h1,h2{
+    text-align:center;
+    margin:0;
+}
+
+
+hr{
+    margin:20px 0;
+}
+
+
+.ligne{
+    margin:8px 0;
+}
+
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    font-size:12px;
+}
+
+
+th,td{
+    border:1px solid #000;
+    padding:6px;
+}
+
+
+th{
+    background:#f3f4f6;
+}
+
+
+thead{
+    display:table-header-group;
+}
+
+
+/* Format impression A4 */
+
+@page{
+
+    size:A4;
+
+    margin:20mm;
+
+}
+
+
+@media print{
+
+    body{
+
+        margin:0;
+
+    }
+
+
+    thead{
+
+        display:table-header-group;
+
+    }
+
+
+    tfoot{
+
+        display:table-footer-group;
+
+    }
+
+
+    tr{
+
+        page-break-inside:avoid;
+
+    }
+
+
+    h1,h2,h3{
+
+        page-break-after:avoid;
+
+    }
+
+
+    table{
+
+        page-break-inside:auto;
+
+    }
+
+}
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<div style="
+display:flex;
+align-items:center;
+justify-content:center;
+gap:20px;
+margin-bottom:15px;
+">
+
+
+${
+logoPharmacie
+?
+`
+<img src="${logoPharmacie}"
+style="
+width:100px;
+height:100px;
+object-fit:contain;
+margin-bottom:10px;
+">
+`
+:
+""
+}
+
+
+<h1 style="
+margin:5px 0;
+">
+${nomPharmacie}
+</h1>
+
+
+${
+infosPharmacie.slogan
+?
+`
+<div style="
+font-style:italic;
+margin-bottom:8px;
+">
+${infosPharmacie.slogan}
+</div>
+`
+:
+""
+}
+
+
+${
+infosPharmacie.adresse
+?
+`
+<div>
+${infosPharmacie.adresse}
+</div>
+`
+:
+""
+}
+
+
+${
+infosPharmacie.telephone
+?
+`
+<div>
+Tél : ${infosPharmacie.telephone}
+</div>
+`
+:
+""
+}
+
+
+${
+infosPharmacie.email
+?
+`
+<div>
+Email : ${infosPharmacie.email}
+</div>
+`
+:
+""
+}
+
+
+${
+infosPharmacie.rccm
+?
+`
+<div>
+RCCM : ${infosPharmacie.rccm}
+</div>
+`
+:
+""
+}
+
+<div style="
+border-top:2px solid #000;
+margin:15px 0;
+"></div>
+
+<h2 style="
+margin-top:20px;
+">
+${titreRapport}
+</h2>
+
+${
+inventaire.statut !== "CLOTURE"
+?
+`
+<div style="
+margin-top:10px;
+font-style:italic;
+color:#b45309;
+">
+⚠️ Document provisoire - inventaire non clôturé
+</div>
+`
+:
+""
+}
+
+
+</div>
+
+
+<div class="ligne">
+
+<b>Date d'impression :</b>
+${dateImpression}
+
+</div>
+
+
+<div class="ligne">
+
+<b>Référence :</b>
+${numeroRapport}
+
+<div class="ligne">
+
+<b>Type de rapport :</b>
+
+${filtre}
+
+</div>
+
+</div>
+
+
+<hr>
+
+
+<div class="ligne">
+<b>Inventaire :</b> #${inventaire.id}
+</div>
+
+
+<div class="ligne">
+<b>Auteur :</b>
+${inventaire.auteur}
+</div>
+
+
+<div class="ligne">
+<b>Début :</b>
+${new Date(inventaire.date_inventaire).toLocaleString("fr-FR")}
+</div>
+
+
+<div class="ligne">
+<b>Fin :</b>
+${
+inventaire.date_cloture
+?
+new Date(inventaire.date_cloture).toLocaleString("fr-FR")
+:
+"Inventaire en cours"
+}
+</div>
+
+
+<div class="ligne">
+<b>Statut :</b>
+${inventaire.statut}
+</div>
+
+
+<hr>
+
+
+<div class="ligne">
+<b>Produits actifs :</b>
+${inventaire.nb_produits_actifs || 0}
+</div>
+
+
+<div class="ligne">
+<b>Produits contrôlés :</b>
+${inventaire.nb_produits_controles || 0}
+</div>
+
+
+<div class="ligne">
+<b>Écarts :</b>
+${inventaire.nb_ecarts || 0}
+</div>
+
+
+<div class="ligne">
+<b>Pertes :</b>
+${nombre(inventaire.pertes || 0)} Fc
+</div>
+
+
+<div class="ligne">
+<b>Surplus :</b>
+${nombre(inventaire.surplus || 0)} Fc
+</div>
+
+
+<div class="ligne">
+<b>Contrôles enregistrés :</b>
+${controlesFiltres.length}
+</div>
+
+<div class="ligne">
+    <b>Produits conformes :</b>
+    ${nbConformes}
+</div>
+
+<div class="ligne">
+    <b>Taux de conformité :</b>
+    ${tauxConformite} %
+</div>
+
+<div class="ligne">
+    <b>Taux d'écarts :</b>
+    ${tauxEcarts} %
+</div>
+
+<div class="ligne">
+    <b>Impact financier net :</b>
+    <span style="
+        color:${impactNet < 0 ? "#dc2626" : "#16a34a"};
+        font-weight:bold;
+    ">
+        ${nombre(impactNet)} Fc
+    </span>
+</div>
+
+<hr>
+
+
+<h3>
+Liste des contrôles
+</h3>
+
+
+<table>
+
+<thead>
+
+<tr>
+<th>Date</th>
+<th>Médicament</th>
+<th>Théorique</th>
+<th>Physique</th>
+<th>Écart</th>
+<th>Valeur</th>
+<th>Statut</th>
+</tr>
+
+</thead>
+
+
+<tbody>
+
+${lignes}
+
+</tbody>
+
+
+</table>
+
+
+<div style="
+margin-top:80px;
+display:flex;
+justify-content:space-between;
+">
+
+
+<div style="
+width:40%;
+text-align:center;
+">
+
+Contrôleur
+
+<br><br><br><br>
+
+______________________
+
+</div>
+
+
+<div style="
+width:40%;
+text-align:center;
+">
+
+Responsable
+
+<br><br><br><br>
+
+______________________
+
+</div>
+
+
+</div>
+
+
+<div style="
+margin-top:40px;
+text-align:center;
+font-size:11px;
+color:#666;
+">
+
+Rapport généré automatiquement par PharmaSys.
+
+</div>
+
+
+</body>
+
+</html>
+
+`);
+
+
+        fenetre.document.close();
+
+        fenetre.print();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert("Impossible d'imprimer le rapport.");
+
+    }
+
+}
+
+async function exporterInventaireCSV(id, filtre = "TOUS"){
+
+    try{
+
+        const { inventaire, controles } = await chargerDonneesInventaire(id);
+
+        let controlesFiltres = controles;
+
+        switch(filtre){
+
+            case "ECARTS":
+                controlesFiltres = controles.filter(c => Number(c.ecart) !== 0);
+                break;
+
+            case "PERTES":
+                controlesFiltres = controles.filter(c => Number(c.ecart) < 0);
+                break;
+
+            case "SURPLUS":
+                controlesFiltres = controles.filter(c => Number(c.ecart) > 0);
+                break;
+
+            case "CONFORMES":
+                controlesFiltres = controles.filter(c => Number(c.ecart) === 0);
+                break;
+
+        }
+
+        let csv = "";
+
+        csv += "Inventaire;" + inventaire.id + "\n";
+        csv += "Statut;" + inventaire.statut + "\n";
+        csv += "Auteur;" + inventaire.auteur + "\n";
+        csv += "Début;" + new Date(inventaire.date_inventaire).toLocaleString("fr-FR") + "\n";
+        csv += "Fin;" + (
+            inventaire.date_cloture
+            ? new Date(inventaire.date_cloture).toLocaleString("fr-FR")
+            : "Inventaire en cours"
+        ) + "\n";
+        csv += "\n";
+
+        csv += "Date;Médicament;Stock théorique;Stock physique;Écart;Valeur;Statut\n";
+
+        controlesFiltres.forEach(c=>{
+
+            csv += [
+                new Date(c.date_controle).toLocaleString("fr-FR"),
+                `"${c.produit_nom}"`,
+                c.stock_systeme,
+                c.stock_physique,
+                c.ecart,
+                c.valeur_ecart || 0,
+                c.statut
+            ].join(";") + "\n";
+
+        });
+
+        const blob = new Blob(
+            ["\ufeff" + csv],
+            { type:"text/csv;charset=utf-8;" }
+        );
+
+        const url = URL.createObjectURL(blob);
+
+        const lien = document.createElement("a");
+
+        lien.href = url;
+
+        lien.download =
+            `Inventaire_${inventaire.id}_${filtre}.csv`;
+
+        document.body.appendChild(lien);
+
+        lien.click();
+
+        document.body.removeChild(lien);
+
+        URL.revokeObjectURL(url);
+
+    }catch(error){
+
+        console.error(error);
+
+        alert("Impossible d'exporter le fichier CSV.");
+
+    }
+
+}
+
     </script>
 </body>
-</html>
+    </html>
